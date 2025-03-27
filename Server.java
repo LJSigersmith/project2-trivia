@@ -1,7 +1,11 @@
 import java.io.*;
 import java.util.*;
+
+import javafx.util.Pair;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -10,12 +14,13 @@ public class Server {
     
     DatagramSocket _socket;
     private int _serverPort = 5001;
+    private int _nodeID = -1;
 
     private ArrayList<Question> _questions = new ArrayList<Question>();
     private Question _currentQuestion;
 
-    int _numClients = 0;
-    ArrayList<String> _clients;
+    int _numPlayers = 0;
+    ArrayList<Pair<InetAddress, Integer>> _players;
     Boolean _gameStarted = false;
 
     private void _loadQuestions() {
@@ -51,9 +56,11 @@ public class Server {
 	}
 
 
-    private void _handleJoinGameRequest(Message message) {
-        _numClients++;
+    private void _handleJoinGameRequest(Message message, InetAddress address, int port) {
         
+        _numPlayers++;
+        _players.add(new Pair<InetAddress, Integer>(address, port));
+
         
     }
     private void _handleReadyToStart(Message message) {
@@ -65,6 +72,27 @@ public class Server {
     private void _handleClientAnswered(Message message) {
 
     }
+
+    private void _sendMessageToClient(Message message, InetAddress clientAddress, int clientPort) {
+
+        try {
+
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+            objectStream.writeObject(message);
+            objectStream.flush();
+            byte[] data = byteStream.toByteArray();
+
+            DatagramPacket packet = new DatagramPacket(data, data.length, clientAddress, clientPort);
+            _socket.send(packet);
+
+        } catch (IOException e) {
+            System.out.println("Error sending message to client");
+            e.printStackTrace();
+        }
+
+    }
+
     private void _waitForClientMessages() {
 
         try { _socket = new DatagramSocket(_serverPort); }
@@ -88,7 +116,7 @@ public class Server {
             if (Message.MSG_JOIN_GAME_REQUEST == messageType) {
                 
                 System.out.println("Client requesting to join game");
-                _handleJoinGameRequest(message);
+                _handleJoinGameRequest(message, packet.getAddress(), packet.getPort());
             
             } else if (Message.MSG_READY_TO_START == messageType) {
             
@@ -133,6 +161,39 @@ public class Server {
             _waitForClientMessages();
         });
         waitForClients.start();
+
+        // Wait for two players to start game
+        while (_numPlayers < 2) {
+            try { Thread.sleep(1000); }
+            catch (InterruptedException e) { System.out.println("Error sleeping"); e.printStackTrace(); }
+            
+        }
+
+        // Wait 5 seconds to give other players time to join
+        try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
+        
+        // Tell all players game is starting
+        Message startGameMessage = new Message();
+        startGameMessage.setType(Message.MSG_STARTING_GAME);
+        startGameMessage.setNodeID(_nodeID);
+        startGameMessage.setTimestamp(System.currentTimeMillis());
+        startGameMessage.setData(null);
+
+        for (Pair<InetAddress, Integer> player: _players) {
+            _sendMessageToClient(startGameMessage, player.getKey(), player.getValue());
+        }
+
+        // Wait for players to all be ready to start playing (MSG_READY_TO_START)
+
+        // Start game
+        // Send first question to all players
+        // Wait for first player to poll
+        // Keep queue going of polls in background in case first player gets it wrong and theres a handoff
+        // Wait for first player to answer
+        // Send score to first player and handoff to next player in queue to answer if necessary
+        // Send next question, repeat
+
+        // Send game over
 
     }
 
