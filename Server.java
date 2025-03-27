@@ -8,15 +8,15 @@ import java.net.SocketException;
 
 public class Server {
     
-    DatagramSocket socket;
+    DatagramSocket _socket;
     private int _serverPort = 5001;
 
-    private ArrayList<Question> questions = new ArrayList<Question>();
-    private Question currentQuestion;
+    private ArrayList<Question> _questions = new ArrayList<Question>();
+    private Question _currentQuestion;
 
-    int numClients = 0;
-    ArrayList<String> clients;
-    Boolean gameStarted = false;
+    int _numClients = 0;
+    ArrayList<String> _clients;
+    Boolean _gameStarted = false;
 
     private void _loadQuestions() {
 
@@ -36,7 +36,7 @@ public class Server {
 				String[] options = optionsString.split(", ");
 
 				Question newQuestion = new Question(question, options, correctOption);
-				questions.add(newQuestion);
+				_questions.add(newQuestion);
 
 			}
 		} catch (IOException e) {
@@ -52,6 +52,7 @@ public class Server {
 
 
     private void _handleJoinGameRequest(Message message) {
+        _numClients++;
         
     }
     private void _handleReadyToStart(Message message) {
@@ -65,7 +66,7 @@ public class Server {
     }
     private void _waitForClientMessages() {
 
-        try { socket = new DatagramSocket(_serverPort); }
+        try { _socket = new DatagramSocket(_serverPort); }
         catch (SocketException e) { System.out.println("Error creating socket"); e.printStackTrace(); return; }
         
         try {
@@ -73,7 +74,7 @@ public class Server {
 
             byte[] payload = new byte[1024];
             DatagramPacket packet = new DatagramPacket(payload, payload.length);
-            socket.receive(packet);
+            _socket.receive(packet);
 
             ByteArrayInputStream in = new ByteArrayInputStream(packet.getData());
             ObjectInputStream is = new ObjectInputStream(in);
@@ -124,13 +125,14 @@ public class Server {
         
         // Load questions from file
         _loadQuestions();
-        currentQuestion = questions.get(0);
+        _currentQuestion = _questions.get(0);
 
         // Start waiting for clients
         Thread waitForClients = new Thread(() -> {
             _waitForClientMessages();
         });
         waitForClients.start();
+
     }
 
 }

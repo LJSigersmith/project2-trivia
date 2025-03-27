@@ -16,7 +16,7 @@ public class Message implements Serializable {
     private int _type;
     private int _nodeID;
     private long _timestamp;
-    private String _data;
+    private byte[] _data;
 
     public int getType() {
         return _type;
@@ -27,7 +27,7 @@ public class Message implements Serializable {
     public long getTimestamp() {
         return _timestamp;
     }
-    public String getData() {
+    public byte[] getData() {
         return _data;
     }
     public void setType(int t) {
@@ -39,7 +39,7 @@ public class Message implements Serializable {
     public void setTimestamp(long t) {
         _timestamp = t;
     }
-    public void setData(String d) {
+    public void setData(byte[] d) {
         _data = d;
     }
 
