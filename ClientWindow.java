@@ -1,6 +1,12 @@
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.TimerTask;
 import java.util.Timer;
@@ -21,7 +27,9 @@ public class ClientWindow implements ActionListener
 	
 	private static SecureRandom random = new SecureRandom();
 
-	private Question currentQuestion;
+	private Question _currentQuestion;
+	private int _serverPort;
+	private InetAddress _serverAddress;
 	
 	void setupGUI() {
 
@@ -88,15 +96,36 @@ public class ClientWindow implements ActionListener
 
 		// Send poll to server
 	}
-
 	void handleSubmitSelected() {
 
 		// Send selected option to server
 	}
-
 	void handleOptionSelected(String option) {
 
 		// Set selected option
+	}
+
+	private void _sendMessageToServer(Message message) {
+		
+		try {
+
+		DatagramSocket socket = new DatagramSocket();
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(os);
+		
+		oos.writeObject(message);
+		oos.flush();
+		byte[] data = os.toByteArray();
+
+		DatagramPacket payload = new DatagramPacket(data, data.length, _serverAddress, _serverPort);
+		socket.send(payload);
+		socket.close();
+
+		} catch (Exception e) {
+			System.out.println("Error sending message to server");
+			e.printStackTrace();
+		}
+		
 	}
 
 	public ClientWindow()
@@ -106,7 +135,23 @@ public class ClientWindow implements ActionListener
 		// Setup GUI
 		setupGUI();
 
-		// Send request to server for question
+		// Setup connection to server
+		_serverPort = 5001;
+		try {
+			_serverAddress = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			System.out.println("Error setting server address");
+			e.printStackTrace();
+		}
+		//_serverAddress = InetAddress.getByName("127.0.0.1");
+
+		// Send request to server to join game
+		Message joinGameRequest = new Message();
+		joinGameRequest.setType(Message.MSG_JOIN_GAME_REQUEST);
+		joinGameRequest.setNodeID(random.nextInt(1000));
+		joinGameRequest.setTimestamp(System.currentTimeMillis());
+		joinGameRequest.setData("Join Game");
+		_sendMessageToServer(joinGameRequest);
 
 		// Recieve question from server
 
@@ -114,8 +159,7 @@ public class ClientWindow implements ActionListener
 
 	}
 
-	// this method is called when you check/uncheck any radio button
-	// this method is called when you press either of the buttons- submit/poll
+	// Handle Buttons
 	@Override
 	public void actionPerformed(ActionEvent e)
 	{
@@ -126,16 +170,16 @@ public class ClientWindow implements ActionListener
 		switch(input)
 		{
 			case "Option 1":
-				handleOptionSelected(currentQuestion.getOptions()[0]);
+				handleOptionSelected(_currentQuestion.getOptions()[0]);
 				break;
 			case "Option 2":
-				handleOptionSelected(currentQuestion.getOptions()[1]);
+				handleOptionSelected(_currentQuestion.getOptions()[1]);
 				break;
 			case "Option 3":
-				handleOptionSelected(currentQuestion.getOptions()[2]);
+				handleOptionSelected(_currentQuestion.getOptions()[2]);
 				break;
 			case "Option 4":
-				handleOptionSelected(currentQuestion.getOptions()[3]);
+				handleOptionSelected(_currentQuestion.getOptions()[3]);
 				break;
 			case "Poll":	
 				handlePollSelected();
@@ -147,29 +191,9 @@ public class ClientWindow implements ActionListener
 				System.out.println("Incorrect Option");
 		}
 		
-		// test code below to demo enable/disable components
-		// DELETE THE CODE BELOW FROM HERE***
-		if(poll.isEnabled())
-		{
-			poll.setEnabled(false);
-			submit.setEnabled(true);
-		}
-		else
-		{
-			poll.setEnabled(true);
-			submit.setEnabled(false);
-		}
-		
-		question.setText("Q2. This is another test problem " + random.nextInt());
-		
-		// you can also enable disable radio buttons
-//		options[random.nextInt(4)].setEnabled(false);
-//		options[random.nextInt(4)].setEnabled(true);
-		// TILL HERE ***
-		
 	}
 	
-	// this class is responsible for running the timer on the window
+	// Timer
 	public class TimerCode extends TimerTask
 	{
 		private int duration;  // write setters and getters as you need

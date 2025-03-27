@@ -1,21 +1,24 @@
 import java.io.*;
 import java.util.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class Server {
     
-    private Socket s = null;
-    private ServerSocket ss = null;
-    private DataInputStream in = null;
+    DatagramSocket socket;
+    private int _serverPort = 5001;
 
     private ArrayList<Question> questions = new ArrayList<Question>();
     private Question currentQuestion;
 
     int numClients = 0;
     ArrayList<String> clients;
+    Boolean gameStarted = false;
 
-    void loadQuestions() {
+    private void _loadQuestions() {
 
 		String filePath = "questions.properties";
 		Properties properties = new Properties();
@@ -47,23 +50,87 @@ public class Server {
 
 	}
 
+
+    private void _handleJoinGameRequest(Message message) {
+        
+    }
+    private void _handleReadyToStart(Message message) {
+
+    }
+    private void _handleClientPolled(Message message) {
+
+    }
+    private void _handleClientAnswered(Message message) {
+
+    }
+    private void _waitForClientMessages() {
+
+        try { socket = new DatagramSocket(_serverPort); }
+        catch (SocketException e) { System.out.println("Error creating socket"); e.printStackTrace(); return; }
+        
+        try {
+        while (true) {
+
+            byte[] payload = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(payload, payload.length);
+            socket.receive(packet);
+
+            ByteArrayInputStream in = new ByteArrayInputStream(packet.getData());
+            ObjectInputStream is = new ObjectInputStream(in);
+
+            try {
+            Message message = (Message) is.readObject();
+            System.out.println("Message Recieved: " + message);
+
+            int messageType = message.getType();
+            if (Message.MSG_JOIN_GAME_REQUEST == messageType) {
+                
+                System.out.println("Client requesting to join game");
+                _handleJoinGameRequest(message);
+            
+            } else if (Message.MSG_READY_TO_START == messageType) {
+            
+                System.out.println("Client ready to start game");
+                _handleReadyToStart(message);
+            
+            } else if (Message.MSG_POLL == messageType) {
+            
+                System.out.println("Client polling");
+                _handleClientPolled(message);
+            
+            } else if (Message.MSG_ANSWER == messageType) {
+            
+                System.out.println("Client answering question");
+                _handleClientAnswered(message);
+            
+            } else {
+                System.out.println("Message type not recognized");
+            }
+
+            } catch (ClassNotFoundException e) {
+                System.out.println("Packet was not Message type");
+                e.printStackTrace();
+            }
+
+        }
+    } catch (IOException e) {
+        System.out.println("Error in waitForClientMessages");
+        e.printStackTrace();
+    }
+
+    }
+
     public Server() {
         
         // Load questions from file
-        loadQuestions();
+        _loadQuestions();
         currentQuestion = questions.get(0);
 
-        while (numClients < 2) {
-            // Start server and wait for at least 2 clients to start game
-            try {
-                ss = new ServerSocket();
-                s = ss.accept();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-        
+        // Start waiting for clients
+        Thread waitForClients = new Thread(() -> {
+            _waitForClientMessages();
+        });
+        waitForClients.start();
     }
 
 }
