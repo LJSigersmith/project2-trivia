@@ -25,39 +25,8 @@ public class ClientWindow implements ActionListener
 	
 	private static SecureRandom random = new SecureRandom();
 
-	private ArrayList<Question> questions;
+	private Question currentQuestion;
 	
-	void loadQuestions() {
-
-		String filePath = "questions.properties";
-		Properties properties = new Properties();
-
-		try {
-			FileInputStream fileInputStream = new FileInputStream(filePath);
-			properties.load(fileInputStream);
-			fileInputStream.close();
-
-			for (int i = 1; i <= 10; i++) {
-				String question = properties.getProperty("question" + i);
-				String optionsString = properties.getProperty("options" + i);
-				String correctOption = properties.getProperty("correct_answer" + i);
-
-				String[] options = optionsString.split(", ");
-
-				Question newQuestion = new Question(question, options, correctOption);
-				questions.add(newQuestion);
-
-			}
-		} catch (IOException e) {
-			System.out.println("Error loading questions");
-			e.printStackTrace();
-		}
-
-		//for (Question q : questions) {
-		//	System.out.println(q);
-		//}
-
-	}
 	void setupGUI() {
 
 		window = new JFrame("Trivia");
@@ -118,18 +87,35 @@ public class ClientWindow implements ActionListener
 		}
 
 	}
+	
+	void handlePollSelected() {
+
+		// Send poll to server
+	}
+
+	void handleSubmitSelected() {
+
+		// Send selected option to server
+	}
+
+	void handleOptionSelected(String option) {
+
+		// Set selected option
+	}
+
 	public ClientWindow()
 	{
 		//JOptionPane.showMessageDialog(window, "This is a trivia game");
 
-		// Load questions
-		questions = new ArrayList<Question>();
-		loadQuestions();
-
 		// Setup GUI
 		setupGUI();
 
-		displayQuestion(questions.get(0));
+		// Send request to server for question
+
+		// Recieve question from server
+
+		// Display question from server
+
 	}
 
 	// this method is called when you check/uncheck any radio button
@@ -143,20 +129,26 @@ public class ClientWindow implements ActionListener
 		String input = e.getActionCommand();  
 		switch(input)
 		{
-			case "Option 1":	// Your code here
-								break;
-			case "Option 2":	// Your code here
-								break;
-			case "Option 3":	// Your code here
-								break;
-			case "Option 4":	// Your code here
-								break;
-			case "Poll":		// Your code here
-								break;
-			case "Submit":		// Your code here
-								break;
+			case "Option 1":
+				handleOptionSelected(currentQuestion.getOptions()[0]);
+				break;
+			case "Option 2":
+				handleOptionSelected(currentQuestion.getOptions()[1]);
+				break;
+			case "Option 3":
+				handleOptionSelected(currentQuestion.getOptions()[2]);
+				break;
+			case "Option 4":
+				handleOptionSelected(currentQuestion.getOptions()[3]);
+				break;
+			case "Poll":	
+				handlePollSelected();
+				break;
+			case "Submit":	
+				handleSubmitSelected();
+				break;
 			default:
-								System.out.println("Incorrect Option");
+				System.out.println("Incorrect Option");
 		}
 		
 		// test code below to demo enable/disable components

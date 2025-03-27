@@ -2,6 +2,13 @@ public class Main
 {
 	public static void main(String[] args)
 	{
-		ClientWindow window = new ClientWindow();
+
+		if (args[0].equals("SERVER")) {
+			Server server = new Server();
+		} else if (args[0].equals("CLIENT")) {
+			ClientWindow window = new ClientWindow();
+		} else {
+			System.out.println("Invalid argument");
+		}
 	}
 }
