@@ -3,8 +3,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.SecureRandom;
 import java.util.TimerTask;
+import java.util.ArrayList;
 import java.util.Timer;
 import javax.swing.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 public class ClientWindow implements ActionListener
 {
@@ -20,11 +24,42 @@ public class ClientWindow implements ActionListener
 	private JFrame window;
 	
 	private static SecureRandom random = new SecureRandom();
+
+	private ArrayList<Question> questions;
 	
-	public ClientWindow()
-	{
-		JOptionPane.showMessageDialog(window, "This is a trivia game");
-		
+	void loadQuestions() {
+
+		String filePath = "questions.properties";
+		Properties properties = new Properties();
+
+		try {
+			FileInputStream fileInputStream = new FileInputStream(filePath);
+			properties.load(fileInputStream);
+			fileInputStream.close();
+
+			for (int i = 1; i <= 10; i++) {
+				String question = properties.getProperty("question" + i);
+				String optionsString = properties.getProperty("options" + i);
+				String correctOption = properties.getProperty("correct_answer" + i);
+
+				String[] options = optionsString.split(", ");
+
+				Question newQuestion = new Question(question, options, correctOption);
+				questions.add(newQuestion);
+
+			}
+		} catch (IOException e) {
+			System.out.println("Error loading questions");
+			e.printStackTrace();
+		}
+
+		//for (Question q : questions) {
+		//	System.out.println(q);
+		//}
+
+	}
+	void setupGUI() {
+
 		window = new JFrame("Trivia");
 		question = new JLabel("Q1. This is a sample question"); // represents the question
 		window.add(question);
@@ -71,6 +106,30 @@ public class ClientWindow implements ActionListener
 		window.setVisible(true);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.setResizable(false);
+		
+	}
+	void displayQuestion(Question q) {
+
+		question.setText(q.getQuestion());
+
+		String[] optionsArray = q.getOptions();
+		for (int i = 0; i < options.length; i++) {
+			options[i].setText(optionsArray[i]);
+		}
+
+	}
+	public ClientWindow()
+	{
+		//JOptionPane.showMessageDialog(window, "This is a trivia game");
+
+		// Load questions
+		questions = new ArrayList<Question>();
+		loadQuestions();
+
+		// Setup GUI
+		setupGUI();
+
+		displayQuestion(questions.get(0));
 	}
 
 	// this method is called when you check/uncheck any radio button
