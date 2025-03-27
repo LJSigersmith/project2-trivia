@@ -28,6 +28,8 @@ public class ClientWindow implements ActionListener
 	private static SecureRandom random = new SecureRandom();
 
 	private Question _currentQuestion;
+
+	private int _clientID;
 	private int _serverPort;
 	private InetAddress _serverAddress;
 	
@@ -131,6 +133,7 @@ public class ClientWindow implements ActionListener
 	public ClientWindow()
 	{
 		//JOptionPane.showMessageDialog(window, "This is a trivia game");
+		_clientID = random.nextInt(1000);
 
 		// Setup GUI
 		setupGUI();
@@ -148,14 +151,17 @@ public class ClientWindow implements ActionListener
 		// Send request to server to join game
 		Message joinGameRequest = new Message();
 		joinGameRequest.setType(Message.MSG_JOIN_GAME_REQUEST);
-		joinGameRequest.setNodeID(random.nextInt(1000));
+		joinGameRequest.setNodeID(_clientID);
 		joinGameRequest.setTimestamp(System.currentTimeMillis());
-		joinGameRequest.setData("Join Game");
+		joinGameRequest.setData(null);
 		_sendMessageToServer(joinGameRequest);
 
-		// Recieve question from server
+		// Wait for server to send starting game message
 
-		// Display question from server
+		// Wait for server to send question
+
+		// Display question
+
 
 	}
 

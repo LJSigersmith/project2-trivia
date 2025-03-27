@@ -54,6 +54,7 @@ public class Server {
     private void _handleJoinGameRequest(Message message) {
         _numClients++;
         
+        
     }
     private void _handleReadyToStart(Message message) {
 
