@@ -1,12 +1,19 @@
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Properties;
+import java.io.*;
+import java.util.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class Server {
     
+    private Socket s = null;
+    private ServerSocket ss = null;
+    private DataInputStream in = null;
+
     private ArrayList<Question> questions = new ArrayList<Question>();
     private Question currentQuestion;
+
+    int numClients = 0;
+    ArrayList<String> clients;
 
     void loadQuestions() {
 
@@ -46,7 +53,16 @@ public class Server {
         loadQuestions();
         currentQuestion = questions.get(0);
 
-        // Send question to clients
+        while (numClients < 2) {
+            // Start server and wait for at least 2 clients to start game
+            try {
+                ss = new ServerSocket();
+                s = ss.accept();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         
     }
 
