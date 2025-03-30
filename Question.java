@@ -1,3 +1,6 @@
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 
 public class Question {
     
@@ -23,5 +26,16 @@ public class Question {
 
     public String toString() {
         return "Question: " + question + "\nOptions: " + String.join(", ", options) + "\nCorrect Answer: " + correctOption;
+    }
+    public byte[] toBytes() {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(this);
+            oos.flush();
+            return bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

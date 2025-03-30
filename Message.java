@@ -11,7 +11,7 @@ public class Message implements Serializable {
     public static int MSG_GOOD_TO_ANSWER = 5; // Server telling client it was first to poll, can answer the question now
     public static int MSG_NOT_GOOD_TO_ANSWER = 6; // Server telling client it wasnt quick enough, another client is answering the question
     public static int MSG_ANSWER = 7; // Client answering question
-    public static int MSG_SCORE = 8; // Server sending client their score after answering (either was correct +1 or wasnt +0)
+    public static int MSG_SCORE = 8; // Server sending client their score after answering (either was correct (+10), incorrect (-10), or time expired (-20))
     public static int MSG_GAME_OVER = 9; // Server sending game over message (with results)
 
     private int _type;

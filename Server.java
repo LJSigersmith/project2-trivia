@@ -32,14 +32,17 @@ public class Server {
     // Polling
     ArrayList<Player> _pollingQueue;
 
-    // Answering
-    Boolean _playerAnswered = false;
-    String _playerAnswer;
+    // Question Loop
+    Boolean _questionAnswered = false;
+    String _playerAnswer = "";
+    long _pollExpiration;
+    long _answerExpiration;
 
     int STAGE_NOT_STARTED = 0;
     int STAGE_STARTING_GAME = 1;
-    int STAGE_QUESTIONS = 2;
-    int STAGE_WAITING_FOR_ANSWER = 3;
+    int STAGE_ACCEPTING_POLLING = 2;
+    int STAGE_ACCEPTING_ANSWER = 3;
+    int STAGE_WAITING_FOR_ANSWER = 4;
     int _gameStage = STAGE_NOT_STARTED;
 
     // Setup
@@ -124,6 +127,8 @@ public class Server {
             Message message = (Message) objIn.readObject();
 
             if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, packet.getAddress(), packet.getPort()); }
+            if (message.getType() == Message.MSG_READY_TO_START) { _handleReadyToStart(message, packet.getAddress(), packet.getPort());} 
+            if (message.getType() == Message.MSG_POLL) { _handlePoll(message, packet.getAddress(), packet.getPort()); }
 
         } catch (ClassNotFoundException e) {
             System.out.println("Packet was not Message type");
@@ -158,10 +163,32 @@ public class Server {
         }
 
     }
+    void _handlePoll(Message message, InetAddress messagAddress, int messagePort) {
+
+        if (_gameStage == STAGE_ACCEPTING_POLLING) {
+            Player player = new Player(messagAddress, messagePort, message.getNodeID());
+            _pollingQueue.add(player);
+        }
+    }
 
     // Game
-    private void _broadcastQuestion(Question question) {
+    private void _broadcastQuestion(Question question, long questionExpiration) {
+
+        for (Player player : _activePlayers) {
+
+            Message questionMessage = new Message();
+            questionMessage.setType(Message.MSG_QUESTION);
+            questionMessage.setTimestamp(questionExpiration);
+            questionMessage.setNodeID(_nodeID);
+
+            // Send question without correctOption so player cant cheat
+            Question questionForClient = new Question(question.getQuestion(), question.getOptions(), null);
+            questionMessage.setData(questionForClient.toBytes());
+
+            _sendMessageToClient(questionMessage, player.getAddress(), player.getPort());
         
+        }
+
     }
     public void start() {
 
@@ -193,25 +220,70 @@ public class Server {
         // _activePlayers is now all players that responded READY TO START
 
         // Start game
-        _gameStage = STAGE_QUESTIONS;
+        boolean moveToNextQuestion = false;
         while (_currentQuestionIndex < _numQuestions) {
             
-            // Send question to all active players with time question will expire
-            _broadcastQuestion(_currentQuestion);
+            // Set question
+            _currentQuestion = _questions.get(_currentQuestionIndex);
 
-            // Wait for first player to poll
+            // Send question to all active players with time polling will expire
+            _gameStage = STAGE_ACCEPTING_POLLING;
+            _pollingQueue.clear();
+            _questionAnswered = false;
+            _pollExpiration = System.currentTimeMillis() + 15000; // 15 seconds to poll
+            _broadcastQuestion(_currentQuestion, _pollExpiration);
 
-            // Send GOOD TO ANSWER to first player to poll
+            while (System.currentTimeMillis() < _pollExpiration) {} // wait for polling time to expire
+            _gameStage = STAGE_ACCEPTING_ANSWER;
 
-            // Wait for ANSWER
+            // Send GOOD TO ANSWER to first player to poll with time allowed to answer
+            while (!moveToNextQuestion) {
 
-            // Send SCORE back to client answering
+                Player firstToPoll = _pollingQueue.get(0);
+                _playerAnswer = "";
+                _answerExpiration = System.currentTimeMillis() + 10000; // 10 sec to answer
+                Message goodToAnswerMessage = getGoodToAnsMessage(_answerExpiration);
+                _sendMessageToClient(goodToAnswerMessage, firstToPoll.getAddress(), firstToPoll.getPort());
+                // TODO: add handling for GOOD TO ANSWER / handling answer
+                while (_questionAnswered || System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
 
-            // If question was incorrect, wait for ANSWER from next in poll queue
-            // If question was incorrect & polling queue is empty & time has expired, send next QUESTION
-            // If question was correct, send next QUESTION
+                // Check answer
+                int playerScoreUpdate = 0;
+                if (!_questionAnswered) { // timer expired, question wasnt answered, pass to next in poll queue
+                    playerScoreUpdate = -20;
+                }
+                if (_questionAnswered && _playerAnswer == _currentQuestion.getCorrectOption()) { // player answered right, go to next question
+                    playerScoreUpdate = 10;
+                    moveToNextQuestion = true;
+                }
+                if (_questionAnswered && _playerAnswer != _currentQuestion.getCorrectOption()) { // player answered wrong, go to next in polling queue
+                    playerScoreUpdate = -10;
+                }
+                // Send SCORE back to client answering
+                Message scoreMessage = getScoreMessage(playerScoreUpdate);
+                _sendMessageToClient(scoreMessage, firstToPoll.getAddress(), firstToPoll.getPort());
             
+                if (moveToNextQuestion) { continue; }
+                if (_pollingQueue.size() == 0) { moveToNextQuestion = true; continue; } // if nobody left in polling queue, go to next question
+
+                // remove all instances of player in polling queue (they already had their chance to answer)
+                _pollingQueue.removeIf(player -> player.equals(firstToPoll));
+                // loop back to next in poll queue
+
+            }
+
+            // Move on to next question
+            _currentQuestionIndex++;
+
         }
+    
+        // Game over, send to all players
+        Message gameOverMessage = getGameOverMessage();
+        for (Player player : _activePlayers) {
+            _sendMessageToClient(gameOverMessage, player.getAddress(), player.getPort());
+        }
+
+        System.out.println("Game completed");
     }
     
     // Constructor / Deconstructor
@@ -246,6 +318,14 @@ public class Server {
         ackJoinMessage.setTimestamp(System.currentTimeMillis());
         ackJoinMessage.setData(null);
         return ackJoinMessage;
+    }
+    private Message getGoodToAnsMessage(long answerExpirationTime) {
+        Message goodToAnsMessage = new Message();
+        goodToAnsMessage.setType(Message.MSG_ACKNOWLEDGE_JOIN_REQUEST);
+        goodToAnsMessage.setNodeID(_nodeID);
+        goodToAnsMessage.setTimestamp(answerExpirationTime); // time when answering is allowed until (10 secs)
+        goodToAnsMessage.setData(null);
+        return goodToAnsMessage;
     }
 
 }
