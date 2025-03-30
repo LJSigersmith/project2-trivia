@@ -170,6 +170,16 @@ public class Server {
             _pollingQueue.add(player);
         }
     }
+    void _handleGoodToAnswer(Message message, InetAddress messaegeAddress, int messagePort) {
+
+        if (_gameStage == STAGE_ACCEPTING_ANSWER) {
+
+            _playerAnswer = message.getData().toString();
+            _questionAnswered = true;
+
+        }
+
+    }
 
     // Game
     private void _broadcastQuestion(Question question, long questionExpiration) {
@@ -239,13 +249,16 @@ public class Server {
             // Send GOOD TO ANSWER to first player to poll with time allowed to answer
             while (!moveToNextQuestion) {
 
+                // if nobody polled, move on
+                if (_pollingQueue.size() == 0) { moveToNextQuestion = true; continue; }
+
                 Player firstToPoll = _pollingQueue.get(0);
                 _playerAnswer = "";
                 _answerExpiration = System.currentTimeMillis() + 10000; // 10 sec to answer
                 Message goodToAnswerMessage = getGoodToAnsMessage(_answerExpiration);
                 _sendMessageToClient(goodToAnswerMessage, firstToPoll.getAddress(), firstToPoll.getPort());
-                // TODO: add handling for GOOD TO ANSWER / handling answer
-                while (_questionAnswered || System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
+                
+                while (!_questionAnswered || System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
 
                 // Check answer
                 int playerScoreUpdate = 0;
@@ -321,11 +334,27 @@ public class Server {
     }
     private Message getGoodToAnsMessage(long answerExpirationTime) {
         Message goodToAnsMessage = new Message();
-        goodToAnsMessage.setType(Message.MSG_ACKNOWLEDGE_JOIN_REQUEST);
+        goodToAnsMessage.setType(Message.MSG_GOOD_TO_ANSWER);
         goodToAnsMessage.setNodeID(_nodeID);
         goodToAnsMessage.setTimestamp(answerExpirationTime); // time when answering is allowed until (10 secs)
         goodToAnsMessage.setData(null);
         return goodToAnsMessage;
+    }
+    private Message getScoreMessage(int playerScoreUpdate) {
+        Message scoreMessage = new Message();
+        scoreMessage.setType(Message.MSG_SCORE);
+        scoreMessage.setNodeID(_nodeID);
+        scoreMessage.setTimestamp(System.currentTimeMillis()); // time when answering is allowed until (10 secs)
+        scoreMessage.setData(Integer.toString(playerScoreUpdate).getBytes());
+        return scoreMessage;
+    }
+    private Message getGameOverMessage() {
+        Message scoreMessage = new Message();
+        scoreMessage.setType(Message.MSG_GAME_OVER);
+        scoreMessage.setNodeID(_nodeID);
+        scoreMessage.setTimestamp(System.currentTimeMillis()); // time when answering is allowed until (10 secs)
+        scoreMessage.setData(null);
+        return scoreMessage;
     }
 
 }
