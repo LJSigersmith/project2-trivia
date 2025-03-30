@@ -3,6 +3,7 @@ import java.io.Serializable;
 public class Message implements Serializable {
     
     public static int MSG_JOIN_GAME_REQUEST = 0; // Client requesting to join game
+    public static int MSG_ACKNOWLEDGE_JOIN_REQUEST = 10;
     public static int MSG_STARTING_GAME = 1; // Server sending game start message
     public static int MSG_READY_TO_START = 2; // Client ready to start game
     public static int MSG_QUESTION = 3; // Server sending question

@@ -5,6 +5,7 @@ public class Main
 
 		if (args[0].equals("SERVER")) {
 			Server server = new Server();
+			server.start();
 		} else if (args[0].equals("CLIENT")) {
 			ClientWindow window = new ClientWindow();
 		} else {
