@@ -1,8 +1,5 @@
 import java.io.*;
 import java.util.*;
-
-import javafx.util.Pair;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -38,11 +35,11 @@ public class Server {
     long _pollExpiration;
     long _answerExpiration;
 
+    // Game Stages
     int STAGE_NOT_STARTED = 0;
     int STAGE_STARTING_GAME = 1;
     int STAGE_ACCEPTING_POLLING = 2;
     int STAGE_ACCEPTING_ANSWER = 3;
-    int STAGE_WAITING_FOR_ANSWER = 4;
     int _gameStage = STAGE_NOT_STARTED;
 
     // Setup
