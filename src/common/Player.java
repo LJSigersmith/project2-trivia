@@ -1,3 +1,4 @@
+package common;
 import java.net.InetAddress;
 
 public class Player {

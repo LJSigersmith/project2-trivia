@@ -1,5 +1,11 @@
+package Server;
 import java.io.*;
 import java.util.*;
+
+import common.Player;
+import common.Question;
+import common.Message;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;

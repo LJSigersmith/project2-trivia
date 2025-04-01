@@ -1,3 +1,4 @@
+package Client;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,6 +12,9 @@ import java.security.SecureRandom;
 import java.util.TimerTask;
 import java.util.Timer;
 import javax.swing.*;
+
+import common.Question;
+import common.Message;
 
 public class ClientWindow implements ActionListener
 {
