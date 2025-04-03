@@ -20,7 +20,8 @@ import java.net.SocketException;
 public class Server {
     
     // Network
-    private int _serverPort = 5001;
+    private int _serverTCPPort = 5001;
+    private int _serverUDPPort = 5002;
     private int _nodeID = -1;
     private ServerSocket _serverSocket;
 
@@ -99,7 +100,7 @@ public class Server {
 	}
     private int _initSocket() {
         try {
-            _serverSocket = new ServerSocket(_serverPort);
+            _serverSocket = new ServerSocket(_serverTCPPort);
             return 0;
         } catch (IOException e) {
             System.out.println("Error initializing server socket");
@@ -170,6 +171,53 @@ public class Server {
 
     }
     
+    private void _handlePoll(Message message, InetAddress messagAddress, int messagePort) {
+
+        Player player = new Player(messagAddress, messagePort, message.getNodeID());
+        addToPollingQueue(player);
+    }
+    private void _listenForUDPMessages() {
+
+        // Init UDP Socket
+        DatagramSocket UDPSocket = null;
+         try {
+             UDPSocket = new DatagramSocket(_serverUDPPort);
+         } catch (SocketException e) {
+             System.out.println("SocketException occurred while listening for UDP messages");
+             e.printStackTrace();
+         } catch (IOException e) {
+             System.out.println("IOException occurred while listening for UDP messages");
+             e.printStackTrace();
+         }
+
+        // Listen for UDP Messages
+        while (true) {
+
+            byte[] buffer = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            try {
+                UDPSocket.receive(packet);
+            } catch (IOException e) {
+                System.out.println("Error receiving packet");
+                e.printStackTrace();
+                continue;
+            }
+
+
+            try {
+
+                ByteArrayInputStream bIn = new ByteArrayInputStream(packet.getData());
+                ObjectInputStream objIn = new ObjectInputStream(bIn);
+                Message message = (Message) objIn.readObject();
+     
+                if (message.getType() == Message.MSG_POLL) { _handlePoll(message, packet.getAddress(), packet.getPort()); }
+     
+            } catch (ClassNotFoundException e) { System.out.println("Packet was not Message type");
+            } catch (IOException e) { System.out.println("Error reading message from packet"); e.printStackTrace(); }
+            
+        }
+    }
+    
     // Constructor / Deconstructor
     public Server() {
         
@@ -185,11 +233,17 @@ public class Server {
         if (socketInit == -1) { return; }
 
         _gameStage = STAGE_NOT_STARTED;
-         // Start background thread to listen for client messages
+         // Start background thread to listen for client TCP connections
          Thread listenForClientMessagesThread = new Thread(() -> {
             _listenForClientMessages();
          });
          listenForClientMessagesThread.start();
+
+         // Start background thread to listen for client UDP messages
+         Thread UDPThread = new Thread(() -> {
+            _listenForUDPMessages();
+         });
+         UDPThread.start();
 
 
         // Wait for two players to start game

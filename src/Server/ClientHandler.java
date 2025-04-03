@@ -59,14 +59,6 @@ public class ClientHandler implements Runnable {
         }
 
     }
-    // THIS WILL NEED TO BE UDP EVENTUALLY
-    private void _handlePoll(Message message, InetAddress messagAddress, int messagePort) {
-
-        if (_server.getGameStage() == Server.STAGE_ACCEPTING_POLLING) {
-            Player player = new Player(messagAddress, messagePort, message.getNodeID());
-            _server.addToPollingQueue(player);
-        }
-    }
     private void _handleGoodToAnswer(Message message, InetAddress messaegeAddress, int messagePort) {
 
         if (_server.getGameStage() == Server.STAGE_ACCEPTING_ANSWER) {
@@ -154,7 +146,8 @@ public class ClientHandler implements Runnable {
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_READY_TO_START) { _handleReadyToStart(message, _clientIP, _clientPort);} 
-                if (message.getType() == Message.MSG_POLL) { _handlePoll(message, _clientIP, _clientPort); }
+                // POLL is handled on UDP, ClientHandler is all TCP
+                //if (message.getType() == Message.MSG_POLL) { _handlePoll(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_GOOD_TO_ANSWER) { _handleGoodToAnswer(message, _clientIP, _clientPort);}
 
                 } catch (ClassNotFoundException e) {
