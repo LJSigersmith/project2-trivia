@@ -11,6 +11,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.*;
 
+// Import the common package classes used by the server
+import common.Message;
+import common.Player;
+import common.Question;
+
 public class TriviaClient extends ClientWindow {
 	// Network communication variables
 	private Socket tcpSocket;
@@ -18,8 +23,8 @@ public class TriviaClient extends ClientWindow {
 	private InetAddress serverAddress;
 	private int tcpPort;
 	private int udpPort;
-	private BufferedReader fromServer;
-	private PrintWriter toServer;
+	private ObjectInputStream fromServer;
+	private ObjectOutputStream toServer;
 
 	// Client identification
 	private final int clientID;
@@ -61,14 +66,17 @@ public class TriviaClient extends ClientWindow {
 
 			// Set up TCP connection
 			tcpSocket = new Socket(serverAddress, tcpPort);
-			fromServer = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
-			toServer = new PrintWriter(tcpSocket.getOutputStream(), true);
+
+			// Order is important: output stream must be created before input stream
+			toServer = new ObjectOutputStream(tcpSocket.getOutputStream());
+			toServer.flush(); // Flush the header information
+			fromServer = new ObjectInputStream(tcpSocket.getInputStream());
 
 			// Set up UDP socket
 			udpSocket = new DatagramSocket();
 
-			// Send client ID to server for identification
-			toServer.println("JOIN:" + clientID);
+			// Send JOIN message to server
+			sendJoinMessage();
 
 			// Update GUI
 			setScore(0);
@@ -92,16 +100,49 @@ public class TriviaClient extends ClientWindow {
 	}
 
 	/**
+	 * Send a JOIN message to the server via TCP
+	 */
+	private void sendJoinMessage() {
+		try {
+			Message joinMessage = new Message();
+			joinMessage.setType(Message.MSG_JOIN_REQUEST);
+			joinMessage.setNodeID(clientID);
+			joinMessage.setTimestamp(System.currentTimeMillis());
+			joinMessage.setData(null);
+
+			toServer.writeObject(joinMessage);
+			toServer.flush();
+			System.out.println("Sent JOIN message to server with ID: " + clientID);
+		} catch (IOException e) {
+			System.out.println("Error sending JOIN message: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Send a message to the server via TCP
+	 */
+	private void sendMessageToServer(Message message) {
+		try {
+			toServer.writeObject(message);
+			toServer.flush();
+		} catch (IOException e) {
+			System.out.println("Error sending message to server: " + e.getMessage());
+		}
+	}
+
+	/**
 	 * Listen for incoming messages from the server via TCP
 	 */
 	private void listenForServerMessages() {
 		try {
-			String message;
-			while ((message = fromServer.readLine()) != null) {
-				final String finalMessage = message;
-				SwingUtilities.invokeLater(() -> processServerMessage(finalMessage));
+			while (true) {
+				Object obj = fromServer.readObject();
+				if (obj instanceof Message) {
+					final Message message = (Message) obj;
+					SwingUtilities.invokeLater(() -> processServerMessage(message));
+				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Server connection lost: " + e.getMessage());
 			SwingUtilities.invokeLater(() -> {
 				JOptionPane.showMessageDialog(getWindow(), "Server connection lost");
@@ -113,36 +154,39 @@ public class TriviaClient extends ClientWindow {
 	/**
 	 * Process messages received from the server
 	 */
-	private void processServerMessage(String message) {
-		if (message.startsWith("QUESTION:")) {
-			// New question received
-			handleNewQuestion(message.substring(9));
-		} else if (message.equals("ACK")) {
-			// Client can answer the question
-			handleAckMessage();
-		} else if (message.equals("NEGATIVE-ACK")) {
-			// Client cannot answer, someone else was faster
-			handleNegativeAckMessage();
-		} else if (message.equals("CORRECT")) {
-			// Answer was correct
-			currentScore += 10;
-			setScore(currentScore);
-			JOptionPane.showMessageDialog(getWindow(), "Correct! +10 points");
-		} else if (message.equals("WRONG")) {
-			// Answer was wrong
-			currentScore -= 10;
-			setScore(currentScore);
-			JOptionPane.showMessageDialog(getWindow(), "Wrong! -10 points");
-		} else if (message.equals("NEXT")) {
-			// Moving to next question without anyone answering
-			JOptionPane.showMessageDialog(getWindow(), "No one answered. Moving to next question.");
-		} else if (message.equals("KILL")) {
-			// Server wants to terminate this client
-			JOptionPane.showMessageDialog(getWindow(), "Server has terminated your connection.");
-			System.exit(0);
-		} else if (message.startsWith("GAME_OVER:")) {
-			// Game has ended
-			JOptionPane.showMessageDialog(getWindow(), "Game Over! " + message.substring(10));
+	private void processServerMessage(Message message) {
+		switch (message.getType()) {
+			case Message.MSG_ACKNOWLEDGE_JOIN_REQUEST:
+				System.out.println("Server acknowledged our join request");
+				break;
+
+			case Message.MSG_STARTING_GAME:
+				System.out.println("Game is starting");
+				JOptionPane.showMessageDialog(getWindow(), "Game is starting!");
+				break;
+
+			case Message.MSG_QUESTION:
+				// New question received
+				handleNewQuestion(message);
+				break;
+
+			case Message.MSG_GOOD_TO_ANSWER:
+				// Client can answer the question
+				handleGoodToAnswerMessage(message);
+				break;
+
+			case Message.MSG_SCORE:
+				// Process score update
+				handleScoreMessage(message);
+				break;
+
+			case Message.MSG_GAME_OVER:
+				// Game has ended
+				JOptionPane.showMessageDialog(getWindow(), "Game Over!");
+				break;
+
+			default:
+				System.out.println("Received unknown message type: " + message.getType());
 		}
 	}
 
@@ -156,23 +200,71 @@ public class TriviaClient extends ClientWindow {
 	/**
 	 * Handle when a new question is received from server
 	 */
-	private void handleNewQuestion(String questionData) {
-		String[] parts = questionData.split("\\|");
-		currentQuestion = Integer.parseInt(parts[0]);
+	private void handleNewQuestion(Message message) {
+		try {
+			// Deserialize the Question object from the message data
+			ByteArrayInputStream bis = new ByteArrayInputStream(message.getData());
+			ObjectInputStream ois = new ObjectInputStream(bis);
+			Question question = (Question) ois.readObject();
+			ois.close();
 
-		// Set question text
-		setQuestion("Q" + currentQuestion + ". " + parts[1]);
+			currentQuestion++;
 
-		// Set options
-		for (int i = 0; i < 4; i++) {
-			setOption(i, parts[i + 2]);
+			// Set question text
+			setQuestion("Q" + currentQuestion + ". " + question.getQuestion());
+
+			// Set options
+			String[] options = question.getOptions();
+			for (int i = 0; i < options.length; i++) {
+				setOption(i, options[i]);
+			}
+
+			// Reset UI state for new question
+			resetUIForNewQuestion();
+
+			// Start polling phase - use the timestamp from message as expiration time
+			startPollingPhase((int)((message.getTimestamp() - System.currentTimeMillis()) / 1000));
+
+		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("Error processing question message: " + e.getMessage());
 		}
+	}
 
-		// Reset UI state for new question
-		resetUIForNewQuestion();
+	/**
+	 * Handle when server says this client can answer
+	 */
+	private void handleGoodToAnswerMessage(Message message) {
+		polling = false;
+		canAnswer = true;
+		getPollButton().setEnabled(false);
+		JOptionPane.showMessageDialog(getWindow(), "You were first! Go ahead and answer.");
 
-		// Start polling phase
-		startPollingPhase();
+		// Start answer phase with time limit from message timestamp
+		int timeLeft = (int)((message.getTimestamp() - System.currentTimeMillis()) / 1000);
+		startAnswerPhase(Math.max(1, timeLeft)); // Ensure at least 1 second
+	}
+
+	/**
+	 * Handle score update from server
+	 */
+	private void handleScoreMessage(Message message) {
+		try {
+			int scoreChange = Integer.parseInt(new String(message.getData()));
+			currentScore += scoreChange;
+			setScore(currentScore);
+
+			if (scoreChange > 0) {
+				JOptionPane.showMessageDialog(getWindow(), "Correct! +" + scoreChange + " points");
+			} else if (scoreChange < 0) {
+				JOptionPane.showMessageDialog(getWindow(), "Wrong! " + scoreChange + " points");
+			}
+
+			// Reset UI for next question
+			canAnswer = false;
+
+		} catch (NumberFormatException e) {
+			System.out.println("Error parsing score: " + e.getMessage());
+		}
 	}
 
 	/**
@@ -224,25 +316,25 @@ public class TriviaClient extends ClientWindow {
 	}
 
 	/**
-	 * Start the polling phase with 15-second timer
+	 * Start the polling phase with timer
 	 */
-	private void startPollingPhase() {
-		// Start the 15-second poll timer
-		startTimer(POLL_TIMER);
+	private void startPollingPhase(int seconds) {
+		// Start the poll timer
+		startTimer(seconds > 0 ? seconds : POLL_TIMER);
 	}
 
 	/**
-	 * Start the answer phase with 10-second timer
+	 * Start the answer phase with timer
 	 */
-	private void startAnswerPhase() {
+	private void startAnswerPhase(int seconds) {
 		// Enable options and submit button
 		for (int i = 0; i < 4; i++) {
 			getOption(i).setEnabled(true);
 		}
 		getSubmitButton().setEnabled(true);
 
-		// Start the 10-second answer timer
-		startTimer(ANSWER_TIMER);
+		// Start the answer timer
+		startTimer(seconds > 0 ? seconds : ANSWER_TIMER);
 	}
 
 	/**
@@ -273,11 +365,8 @@ public class TriviaClient extends ClientWindow {
 
 							// If this client can answer, they missed their chance
 							if (canAnswer && getOptionGroup().getSelection() == null) {
-								// Penalize for not answering in time
-								currentScore -= 20;
-								setScore(currentScore);
-								JOptionPane.showMessageDialog(getWindow(), "Time's up! -20 points");
-								toServer.println("TIMEOUT");
+								// Timeout message
+								sendTimeoutMessage();
 							}
 						}
 					}
@@ -295,6 +384,17 @@ public class TriviaClient extends ClientWindow {
 	}
 
 	/**
+	 * Send timeout message to server
+	 */
+	private void sendTimeoutMessage() {
+		Message timeoutMsg = new Message();
+		timeoutMsg.setType(Message.MSG_TIMEOUT);
+		timeoutMsg.setNodeID(clientID);
+		timeoutMsg.setTimestamp(System.currentTimeMillis());
+		sendMessageToServer(timeoutMsg);
+	}
+
+	/**
 	 * Set the current clock
 	 */
 	private void setClock(TimerTask newClock) {
@@ -306,24 +406,6 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private TimerTask getClock() {
 		return clock;
-	}
-
-	/**
-	 * Handle when server acknowledges this client to answer
-	 */
-	private void handleAckMessage() {
-		polling = false;
-		canAnswer = true;
-		getPollButton().setEnabled(false);
-		JOptionPane.showMessageDialog(getWindow(), "You were first! Go ahead and answer.");
-		startAnswerPhase();
-	}
-
-	/**
-	 * Handle when server denies this client to answer
-	 */
-	private void handleNegativeAckMessage() {
-		JOptionPane.showMessageDialog(getWindow(), "Someone else beat you to it!");
 	}
 
 	/**
@@ -359,15 +441,27 @@ public class TriviaClient extends ClientWindow {
 		if (!polling) return;
 
 		try {
-			// Send UDP "buzz" message to server
-			String buzzMessage = "BUZZ:" + clientID + ":" + currentQuestion;
-			byte[] sendData = buzzMessage.getBytes();
+			// Create a poll message compatible with the server
+			Message pollMessage = new Message();
+			pollMessage.setType(Message.MSG_POLL);
+			pollMessage.setNodeID(clientID);
+			pollMessage.setTimestamp(System.currentTimeMillis());
+			pollMessage.setData(Integer.toString(currentQuestion).getBytes());
+
+			// Serialize the message
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(byteStream);
+			out.writeObject(pollMessage);
+			out.flush();
+
+			// Send UDP "poll" message to server
+			byte[] sendData = byteStream.toByteArray();
 			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, udpPort);
 			udpSocket.send(sendPacket);
 
-			System.out.println("Sent buzz to server: " + buzzMessage);
+			System.out.println("Sent poll to server for question " + currentQuestion);
 		} catch (IOException e) {
-			System.out.println("Error sending buzz: " + e.getMessage());
+			System.out.println("Error sending poll: " + e.getMessage());
 		}
 	}
 
@@ -392,7 +486,12 @@ public class TriviaClient extends ClientWindow {
 		}
 
 		// Send answer to server
-		toServer.println("ANSWER:" + selectedOption);
+		Message answerMessage = new Message();
+		answerMessage.setType(Message.MSG_ANSWER);
+		answerMessage.setNodeID(clientID);
+		answerMessage.setTimestamp(System.currentTimeMillis());
+		answerMessage.setData(Integer.toString(selectedOption).getBytes());
+		sendMessageToServer(answerMessage);
 
 		// Disable submit button and options after submission
 		getSubmitButton().setEnabled(false);
@@ -409,7 +508,16 @@ public class TriviaClient extends ClientWindow {
 	private void disconnectFromServer() {
 		try {
 			if (toServer != null) {
-				toServer.println("LEAVE:" + clientID);
+				Message leaveMessage = new Message();
+				leaveMessage.setType(Message.MSG_LEAVE);
+				leaveMessage.setNodeID(clientID);
+				leaveMessage.setTimestamp(System.currentTimeMillis());
+				sendMessageToServer(leaveMessage);
+
+				toServer.close();
+			}
+			if (fromServer != null) {
+				fromServer.close();
 			}
 			if (tcpSocket != null) {
 				tcpSocket.close();
@@ -464,9 +572,9 @@ public class TriviaClient extends ClientWindow {
 	 */
 	public static void main(String[] args) {
 		// Default connection parameters
-		String host = "localhost";
-		int tcpPort = 9000;
-		int udpPort = 9001;
+		String host = "127.0.0.1";
+		int tcpPort = 5001;
+		int udpPort = 5002;
 
 		// Get client ID from user
 		String clientIDStr = JOptionPane.showInputDialog("Enter your client ID (1-10):");
@@ -484,96 +592,4 @@ public class TriviaClient extends ClientWindow {
 		// Start the client
 		new TriviaClient(host, tcpPort, udpPort, clientID);
 	}
-}
-
-/**
- * ClientWindow class to handle the GUI elements
- */
-abstract class ClientWindow implements ActionListener {
-	// Window components
-	private JFrame window;
-	private JLabel questionLabel;
-	private JLabel scoreLabel;
-	private JLabel timerLabel;
-	private JButton pollButton;
-	private JButton submitButton;
-	private JRadioButton[] options;
-	private ButtonGroup optionGroup;
-
-	/**
-	 * Constructor to initialize the GUI
-	 */
-	public ClientWindow() {
-		// Set up the main window
-		window = new JFrame("Trivia Game Client");
-		window.setSize(500, 400);
-		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		window.setLayout(new BorderLayout());
-
-		// Create the question panel
-		JPanel questionPanel = new JPanel(new BorderLayout());
-		questionLabel = new JLabel("Waiting for question...");
-		questionLabel.setFont(new Font("Arial", Font.BOLD, 14));
-		questionPanel.add(questionLabel, BorderLayout.CENTER);
-		window.add(questionPanel, BorderLayout.NORTH);
-
-		// Create options panel
-		JPanel optionsPanel = new JPanel(new GridLayout(4, 1));
-		options = new JRadioButton[4];
-		optionGroup = new ButtonGroup();
-
-		for (int i = 0; i < 4; i++) {
-			options[i] = new JRadioButton("Option " + (i + 1));
-			options[i].setActionCommand("Option " + (i + 1));
-			options[i].addActionListener(this);
-			options[i].setEnabled(false);
-			optionGroup.add(options[i]);
-			optionsPanel.add(options[i]);
-		}
-
-		window.add(optionsPanel, BorderLayout.CENTER);
-
-		// Create bottom panel for buttons and score
-		JPanel bottomPanel = new JPanel(new BorderLayout());
-
-		// Score panel
-		JPanel scorePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		scoreLabel = new JLabel("Score: 0");
-		scorePanel.add(scoreLabel);
-
-		// Timer panel
-		JPanel timerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		timerLabel = new JLabel("Time: --");
-		timerPanel.add(timerLabel);
-
-		// Buttons panel
-		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		pollButton = new JButton("Poll");
-		pollButton.setActionCommand("Poll");
-		pollButton.addActionListener(this);
-
-		submitButton = new JButton("Submit");
-		submitButton.setActionCommand("Submit");
-		submitButton.addActionListener(this);
-		submitButton.setEnabled(false);
-
-		buttonsPanel.add(pollButton);
-		buttonsPanel.add(submitButton);
-
-		// Add panels to bottom panel
-		bottomPanel.add(scorePanel, BorderLayout.WEST);
-		bottomPanel.add(timerPanel, BorderLayout.CENTER);
-		bottomPanel.add(buttonsPanel, BorderLayout.EAST);
-
-		window.add(bottomPanel, BorderLayout.SOUTH);
-
-		// Display the window
-		window.setVisible(true);
-	}
-
-	/**
-	 * Abstract method to be implemented by subclasses
-	 */
-	@Override
-	public abstract void actionPerformed(ActionEvent e);
 }

@@ -46,9 +46,7 @@ public class NetworkHandler {
                 messageHandler.accept(message);
             }
         } catch (IOException e) {
-            if (running) {
-                System.err.println("Network error: " + e.getMessage());
-            }
+            System.err.println("Network error: " + e.getMessage());
         }
     }
 

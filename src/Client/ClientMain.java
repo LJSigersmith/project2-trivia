@@ -2,9 +2,9 @@ package Client;
 
 public class ClientMain {
     public static void main(String[] args) {
-        String serverAddress = "localhost";
-        int tcpPort = 5555;
-        int udpPort = 5556;
+        String serverAddress = "192.152.243.162";
+        int tcpPort = 5001;
+        int udpPort = 5002;
 
         NetworkHandler networkHandler = new NetworkHandler(
                 serverAddress,

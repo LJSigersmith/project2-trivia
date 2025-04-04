@@ -9,6 +9,10 @@ public class Question {
     private String[] options;
     private String correctOption;
 
+    public static Question fromBytes(byte[] data) {
+        return null;
+    }
+
     public String getQuestion() {
         return question;
     }

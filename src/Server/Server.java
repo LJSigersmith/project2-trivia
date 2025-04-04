@@ -8,7 +8,6 @@ import java.util.concurrent.Executors;
 import common.Player;
 import common.Question;
 import common.Message;
-import Server.ClientHandler;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -136,7 +135,7 @@ public class Server {
             _clientHandlers.add(clientHandler);
         }
     }
-    public static void removeClient(ClientHandler clientHandler) {
+    public static void removeClient(int clientHandler) {
         synchronized (_clientHandlers) {
             _clientHandlers.remove(clientHandler);
         }
