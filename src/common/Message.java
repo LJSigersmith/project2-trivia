@@ -3,17 +3,20 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     
-    public static int MSG_JOIN_GAME_REQUEST = 0; // Client requesting to join game
-    public static int MSG_ACKNOWLEDGE_JOIN_REQUEST = 10;
-    public static int MSG_STARTING_GAME = 1; // Server sending game start message
-    public static int MSG_READY_TO_START = 2; // Client ready to start game
-    public static int MSG_QUESTION = 3; // Server sending question
-    public static int MSG_POLL = 4; // Client polling
-    public static int MSG_GOOD_TO_ANSWER = 5; // Server telling client it was first to poll, can answer the question now
-    public static int MSG_NOT_GOOD_TO_ANSWER = 6; // Server telling client it wasnt quick enough, another client is answering the question
-    public static int MSG_ANSWER = 7; // Client answering question
-    public static int MSG_SCORE = 8; // Server sending client their score after answering (either was correct (+10), incorrect (-10), or time expired (-20))
-    public static int MSG_GAME_OVER = 9; // Server sending game over message (with results)
+    public static final int MSG_JOIN_GAME_REQUEST = 0; // Client requesting to join game
+    public static final int MSG_ACKNOWLEDGE_JOIN_REQUEST = 10;
+    public static final int MSG_STARTING_GAME = 1; // Server sending game start message
+    public static final int MSG_READY_TO_START = 2; // Client ready to start game
+    public static final int MSG_QUESTION = 3; // Server sending question
+    public static final int MSG_POLL = 4; // Client polling
+    public static final int MSG_GOOD_TO_ANSWER = 5; // Server telling client it was first to poll, can answer the question now
+    public static final int MSG_NOT_GOOD_TO_ANSWER = 6; // Server telling client it wasnt quick enough, another client is answering the question
+    public static final int MSG_ANSWER = 7; // Client answering question
+    public static final int MSG_SCORE = 8; // Server sending client their score after answering (either was correct (+10), incorrect (-10), or time expired (-20))
+    public static final int MSG_GAME_OVER = 9; // Server sending game over message (with results)
+    public static final int MSG_TIMEOUT = 11;
+    public static final int MSG_JOIN_REQUEST = 12;
+    public static final int MSG_LEAVE = 13;
 
     private int _type;
     private int _nodeID;
@@ -44,6 +47,7 @@ public class Message implements Serializable {
     public void setData(byte[] d) {
         _data = d;
     }
+
 
     public String toString() {
         String typeString = "";
