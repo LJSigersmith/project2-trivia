@@ -142,6 +142,9 @@ public class ClientHandler implements Runnable {
                 try {
 
                 //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
+                Object readObject = objIn.readObject();
+                System.out.println("Received object of type: " + readObject.getClass().getName());
+
                 Message message = (Message) objIn.readObject();
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
