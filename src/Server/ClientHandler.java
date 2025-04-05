@@ -135,13 +135,13 @@ public class ClientHandler implements Runnable {
             //int bytesRead;
             // Read incoming tcp messages
             //while ((bytesRead = _dataIn.read(buffer)) != -1) {
+            ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
             while (true) {    
                 //byte[] data = Arrays.copyOf(buffer, bytesRead);
                 
                 try {
 
                 //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
-                ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
                 Message message = (Message) objIn.readObject();
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
