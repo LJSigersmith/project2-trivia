@@ -73,34 +73,46 @@ public class TriviaClient extends ClientWindow {
 		this.udpPort = udpPort;
 		this.clientID = clientID;
 
+
+		System.out.println("Attempting to connect to server...");
 		try {
 			// Connect to server
 			serverAddress = InetAddress.getByName(host);
 
 			// Set up TCP connection
 			tcpSocket = new Socket(serverAddress, tcpPort);
+			System.out.println("TCP connection established");
 
 			// Order is important: output stream must be created before input stream
-			toServer = new ObjectOutputStream(tcpSocket.getOutputStream());
-			toServer.flush(); // Flush the header information
-			fromServer = new ObjectInputStream(tcpSocket.getInputStream());
+			try {
+				toServer = new ObjectOutputStream(tcpSocket.getOutputStream());
+				toServer.flush(); // Ensure the stream is flushed
+				System.out.println("ObjectOutputStream created and flushed");
+			
+			} catch (IOException e) {
+				System.out.println("Error creating Object Streams: " + e.getMessage()); // Log any issues
+				JOptionPane.showMessageDialog(getWindow(), "Error creating streams: " + e.getMessage());
+				System.exit(1);
+			}
 
 			// Set up UDP socket
 			udpSocket = new DatagramSocket();
+			System.out.println("UDP socket created");
 
 			// Set window closing behavior
-			getWindow().addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosing(WindowEvent e) {
-					disconnectFromServer();
-					System.exit(0);
-				}
-			});
+			//getWindow().addWindowListener(new WindowAdapter() {
+			//	@Override
+			//	public void windowClosing(WindowEvent e) {
+			//		disconnectFromServer();
+			//		System.exit(0);
+			//	}
+			//});
 
 			// Start a thread to listen for server messages
 			new Thread(this::listenForServerMessages).start();
 
 		} catch (IOException e) {
+			System.out.println("Error in TriviaClient constructor: " + e.getMessage());  // Log exception
 			JOptionPane.showMessageDialog(getWindow(), "Could not connect to server: " + e.getMessage());
 			System.exit(1);
 		}
@@ -110,31 +122,38 @@ public class TriviaClient extends ClientWindow {
 	 * Send a JOIN message to the server via TCP
 	 */
 	private void sendJoinMessage() {
-		try {
+		
 			Message joinMessage = new Message();
 			joinMessage.setType(Message.MSG_JOIN_REQUEST);
 			joinMessage.setNodeID(clientID);
 			joinMessage.setTimestamp(System.currentTimeMillis());
 			joinMessage.setData(null);
 
-			toServer.writeObject(joinMessage);
-			toServer.flush();
+			sendMessageToServer(joinMessage);
 			System.out.println("Sent JOIN message to server with ID: " + clientID);
-		} catch (IOException e) {
-			System.out.println("Error sending JOIN message: " + e.getMessage());
-		}
 	}
 
 	/**
 	 * Send a message to the server via TCP
 	 */
 	private void sendMessageToServer(Message message) {
+		
+		System.out.println("Sending message to server");
 		try {
-			toServer.writeObject(message);
+			// Serialize the Message object to byte array
+			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+			ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+			objectStream.writeObject(message);
+			objectStream.flush();
+			byte[] messageBytes = byteStream.toByteArray();
+
+			// Send the byte array to the server
+			toServer.write(messageBytes);
 			toServer.flush();
 		} catch (IOException e) {
 			System.out.println("Error sending message to server: " + e.getMessage());
 		}
+
 	}
 
 	/**
@@ -142,6 +161,8 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private void listenForServerMessages() {
 		try {
+			fromServer = new ObjectInputStream(tcpSocket.getInputStream());
+			System.out.println("ObjectInputStream created");
 			while (true) {
 				Object obj = fromServer.readObject();
 				if (obj instanceof Message) {
@@ -579,10 +600,11 @@ public class TriviaClient extends ClientWindow {
 	 */
 	public void start() {
 
+		System.out.println("Sending JOIN");
 		// Send JOIN message to server
 		sendJoinMessage();
 
 		// Update GUI
-		setScore(0);
+		//setScore(0);
 	}
 }

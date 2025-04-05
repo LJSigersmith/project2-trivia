@@ -30,7 +30,9 @@ public class Main
 
 			serverAddress = "10.0.0.74";
 
+			System.out.println("Starting client");
 			TriviaClient client = new TriviaClient(serverAddress, tcpPort, udpPort);
+			System.out.println("Starting client");
 			client.start();
 			
 		} else {

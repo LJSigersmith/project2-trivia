@@ -152,9 +152,15 @@ public class ClientHandler implements Runnable {
 
                 } catch (ClassNotFoundException e) {
                     System.out.println("Packet was not Message type");
+                } catch (EOFException e) {
+                        System.out.println("EOF");
+                        e.printStackTrace();
                 } catch (IOException e) {
                     System.out.println("Error reading message from packet");
                     e.printStackTrace();
+                    System.out.println("Error message: ");
+                    System.out.println(e.getMessage());
+
                 }
             }
         } catch (IOException e) {
