@@ -13,9 +13,10 @@ import common.Player;
 public class ClientHandler implements Runnable {
     
     private final Socket _socket;
-    private BufferedReader _in;
-    private DataInputStream _dataIn;
+    //private BufferedReader _in;
+    //private DataInputStream _dataIn;
     private OutputStream _outToClient;
+    private ObjectInputStream _objIn;
 
     InetAddress _clientIP;
     public InetAddress getClientIP() { return _clientIP; }
@@ -30,8 +31,9 @@ public class ClientHandler implements Runnable {
         this._socket = socket;
         this._server = server;
         try {
-        this._in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this._dataIn = new DataInputStream(socket.getInputStream());
+        //this._in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this._objIn = new ObjectInputStream(socket.getInputStream());
+        //this._dataIn = new DataInputStream(socket.getInputStream());
         this._outToClient = _socket.getOutputStream();
         } catch (IOException e) { System.out.println("Error in ClientHandler constructor"); e.printStackTrace(); }
     }
@@ -124,7 +126,7 @@ public class ClientHandler implements Runnable {
             _clientIP = _socket.getInetAddress();
             _clientPort = _socket.getPort();
 
-            _in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
+            //_in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
 
             // Add this client's OutputStream to list
             synchronized (_clientWriters) {
@@ -135,14 +137,14 @@ public class ClientHandler implements Runnable {
             //int bytesRead;
             // Read incoming tcp messages
             //while ((bytesRead = _dataIn.read(buffer)) != -1) {
-            ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
+            //ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
             while (true) {    
                 //byte[] data = Arrays.copyOf(buffer, bytesRead);
                 
                 try {
 
                 //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
-                Object readObject = objIn.readObject();
+                Object readObject = _objIn.readObject();
                 System.out.println("Received object of type: " + readObject.getClass().getName());
 
                 if (readObject instanceof String) { System.out.println("Recvd string: " + (String) readObject); continue; }
@@ -165,8 +167,6 @@ public class ClientHandler implements Runnable {
 
                 }
             }
-        } catch (IOException e) {
-            System.out.println("Error with client communication: " + e.getMessage());
         } finally {
             try {
                 // Remove client from list and close streams when client disconnects
@@ -174,7 +174,7 @@ public class ClientHandler implements Runnable {
                     _clientWriters.remove(_outToClient);
                 }
                 _socket.close();
-                _in.close();
+                //_in.close();
                 _outToClient.close();
                 System.out.println("Client disconnected: " + _socket.getRemoteSocketAddress());
             } catch (IOException e) {
