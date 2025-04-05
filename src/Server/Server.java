@@ -184,9 +184,6 @@ public class Server {
          } catch (SocketException e) {
              System.out.println("SocketException occurred while listening for UDP messages");
              e.printStackTrace();
-         } catch (IOException e) {
-             System.out.println("IOException occurred while listening for UDP messages");
-             e.printStackTrace();
          }
 
         // Listen for UDP Messages
@@ -246,8 +243,8 @@ public class Server {
 
 
         // Wait for two players to start game
+        System.out.println("Waiting for players to join...");
         while (_numPlayers < 2) {
-            System.out.println("Waiting for players to join...");
             try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
         }
         // Wait 5 seconds to give other players time to join

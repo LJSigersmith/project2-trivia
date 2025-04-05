@@ -2,6 +2,9 @@ package Client;
 
 public class ClientMain {
     public static void main(String[] args) {
+
+        System.out.println("Main started");
+
         String serverAddress = "192.152.243.162";
         int tcpPort = 5001;
         int udpPort = 5002;
