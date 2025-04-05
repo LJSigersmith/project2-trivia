@@ -53,8 +53,21 @@ public class TriviaClient extends ClientWindow {
 	/**
 	 * Constructor sets up the client and establishes connection with the server
 	 */
-	public TriviaClient(String host, int tcpPort, int udpPort, int clientID) {
-		super(); // Initialize the GUI using the parent class constructor
+	public TriviaClient(String host, int tcpPort, int udpPort) {
+		//super(); // Initialize the GUI using the parent class constructor
+
+		// Get client ID from user
+		String clientIDStr = JOptionPane.showInputDialog("Enter your client ID (1-10):");
+		int clientID = 1;
+		try {
+			clientID = Integer.parseInt(clientIDStr);
+			if (clientID < 1 || clientID > 10) {
+				JOptionPane.showMessageDialog(null, "Invalid client ID. Using default ID = 1");
+				clientID = 1;
+			}
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, "Invalid client ID. Using default ID = 1");
+		}
 
 		this.tcpPort = tcpPort;
 		this.udpPort = udpPort;
@@ -74,12 +87,6 @@ public class TriviaClient extends ClientWindow {
 
 			// Set up UDP socket
 			udpSocket = new DatagramSocket();
-
-			// Send JOIN message to server
-			sendJoinMessage();
-
-			// Update GUI
-			setScore(0);
 
 			// Set window closing behavior
 			getWindow().addWindowListener(new WindowAdapter() {
@@ -570,26 +577,12 @@ public class TriviaClient extends ClientWindow {
 	/**
 	 * Main method to start the client
 	 */
-	public static void main(String[] args) {
-		// Default connection parameters
-		String host = "127.0.0.1";
-		int tcpPort = 5001;
-		int udpPort = 5002;
+	public void start() {
 
-		// Get client ID from user
-		String clientIDStr = JOptionPane.showInputDialog("Enter your client ID (1-10):");
-		int clientID = 1;
-		try {
-			clientID = Integer.parseInt(clientIDStr);
-			if (clientID < 1 || clientID > 10) {
-				JOptionPane.showMessageDialog(null, "Invalid client ID. Using default ID = 1");
-				clientID = 1;
-			}
-		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(null, "Invalid client ID. Using default ID = 1");
-		}
+		// Send JOIN message to server
+		sendJoinMessage();
 
-		// Start the client
-		new TriviaClient(host, tcpPort, udpPort, clientID);
+		// Update GUI
+		setScore(0);
 	}
 }

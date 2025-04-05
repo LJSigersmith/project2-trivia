@@ -16,34 +16,22 @@ public class Main
 			Server server = new Server();
 			server.start();
 		} else if (args[0].equals("CLIENT")) {
-			ClientWindow window = new ClientWindow() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-
-				}
-			};
 
 			String serverAddress = "";
-			try {
-			serverAddress = InetAddress.getLocalHost().getHostAddress();
-			} catch (UnknownHostException e) {
-				System.out.println(e.getMessage());
-			}
 			int tcpPort = 5001;
 			int udpPort = 5002;
 
-			NetworkHandler networkHandler = new NetworkHandler(
-				serverAddress, tcpPort, udpPort, message -> System.out.println("Server: " + message)
-			);
+			// Use if running client and server on same node
+			//try {
+			//serverAddress = InetAddress.getLocalHost().getHostAddress();
+			//} catch (UnknownHostException e) {
+			//	System.out.println(e.getMessage());
+			//}
 
-			try {
-				networkHandler.connect();
-				System.out.println("Connected to server. Client ID: " + networkHandler.getClientId());
-			} catch (Exception e) {
-				System.err.println("Client error: " + e.getMessage());
-			} finally {
-				networkHandler.disconnect();
-			}
+			serverAddress = "10.0.0.74";
+
+			TriviaClient client = new TriviaClient(serverAddress, tcpPort, udpPort);
+			client.start();
 			
 		} else {
 			System.out.println("Invalid argument");
