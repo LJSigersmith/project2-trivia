@@ -145,7 +145,9 @@ public class ClientHandler implements Runnable {
                 Object readObject = objIn.readObject();
                 System.out.println("Received object of type: " + readObject.getClass().getName());
 
-                Message message = (Message) objIn.readObject();
+                if (readObject instanceof String) { System.out.println("Recvd string: " + (String) readObject); continue; }
+
+                Message message = (Message) readObject;
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_READY_TO_START) { _handleReadyToStart(message, _clientIP, _clientPort);} 
