@@ -131,17 +131,17 @@ public class ClientHandler implements Runnable {
                 _clientWriters.add(_outToClient);
             }
 
-            byte[] buffer = new byte[1024];
-            int bytesRead;
+            //byte[] buffer = new byte[1024];
+            //int bytesRead;
             // Read incoming tcp messages
-            while ((bytesRead = _dataIn.read(buffer)) != -1) {
-                
-                byte[] data = Arrays.copyOf(buffer, bytesRead);
+            //while ((bytesRead = _dataIn.read(buffer)) != -1) {
+            while (true) {    
+                //byte[] data = Arrays.copyOf(buffer, bytesRead);
                 
                 try {
 
-                ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
-                ObjectInputStream objIn = new ObjectInputStream(byteIn);
+                //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
+                ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
                 Message message = (Message) objIn.readObject();
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
@@ -152,9 +152,6 @@ public class ClientHandler implements Runnable {
 
                 } catch (ClassNotFoundException e) {
                     System.out.println("Packet was not Message type");
-                } catch (EOFException e) {
-                        System.out.println("EOF");
-                        e.printStackTrace();
                 } catch (IOException e) {
                     System.out.println("Error reading message from packet");
                     e.printStackTrace();

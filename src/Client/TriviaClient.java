@@ -122,7 +122,7 @@ public class TriviaClient extends ClientWindow {
 	 * Send a JOIN message to the server via TCP
 	 */
 	private void sendJoinMessage() {
-		
+
 			Message joinMessage = new Message();
 			joinMessage.setType(Message.MSG_JOIN_REQUEST);
 			joinMessage.setNodeID(clientID);
@@ -140,16 +140,9 @@ public class TriviaClient extends ClientWindow {
 		
 		System.out.println("Sending message to server");
 		try {
-			// Serialize the Message object to byte array
-			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-			ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+			ObjectOutputStream objectStream = new ObjectOutputStream(tcpSocket.getOutputStream());
 			objectStream.writeObject(message);
 			objectStream.flush();
-			byte[] messageBytes = byteStream.toByteArray();
-
-			// Send the byte array to the server
-			toServer.write(messageBytes);
-			toServer.flush();
 		} catch (IOException e) {
 			System.out.println("Error sending message to server: " + e.getMessage());
 		}
