@@ -22,13 +22,13 @@ public class Main
 			int udpPort = 5002;
 
 			// Use if running client and server on same node
-			//try {
-			//serverAddress = InetAddress.getLocalHost().getHostAddress();
-			//} catch (UnknownHostException e) {
-			//	System.out.println(e.getMessage());
-			//}
+			try {
+			serverAddress = InetAddress.getLocalHost().getHostAddress();
+			} catch (UnknownHostException e) {
+				System.out.println(e.getMessage());
+			}
 
-			serverAddress = "10.0.0.74";
+			//serverAddress = "10.0.0.74";
 
 			System.out.println("Starting client");
 			TriviaClient client = new TriviaClient(serverAddress, tcpPort, udpPort);

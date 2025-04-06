@@ -127,7 +127,7 @@ public class TriviaClient extends ClientWindow {
 			joinMessage.setType(Message.MSG_JOIN_REQUEST);
 			joinMessage.setNodeID(clientID);
 			joinMessage.setTimestamp(System.currentTimeMillis());
-			joinMessage.setData("join".getBytes());
+			joinMessage.setData(null);
 
 			sendMessageToServer(joinMessage);
 			System.out.println("Sent JOIN message to server with ID: " + clientID);
@@ -138,20 +138,15 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private void sendMessageToServer(Message message) {
 		
-		/*
-		System.out.println("Sending message to server");
 		try {
-			ObjectOutputStream objectStream = new ObjectOutputStream(tcpSocket.getOutputStream());
-			objectStream.writeObject(message);
-			objectStream.flush();
-		} catch (IOException e) {
-			System.out.println("Error sending message to server: " + e.getMessage());
-		}
-		*/
-		try {
-		ObjectOutputStream objectStream = new ObjectOutputStream(tcpSocket.getOutputStream());
-		objectStream.writeObject("HELLO");
-		objectStream.flush();
+			if (toServer == null) {
+				toServer = new ObjectOutputStream(tcpSocket.getOutputStream());
+				toServer.flush();
+			}
+		
+			toServer.writeObject(message);
+			toServer.flush();
+
 		} catch (IOException e) { System.out.println("Error: " + e.getMessage());}
 
 	}

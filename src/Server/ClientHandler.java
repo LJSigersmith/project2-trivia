@@ -28,13 +28,14 @@ public class ClientHandler implements Runnable {
     private static final CopyOnWriteArrayList<OutputStream> _clientWriters = new CopyOnWriteArrayList<>();
     
     public ClientHandler(Socket socket, Server server) {
-        this._socket = socket;
-        this._server = server;
+        _socket = socket;
+        _server = server;
         try {
         //this._in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this._objIn = new ObjectInputStream(socket.getInputStream());
+        _outToClient = _socket.getOutputStream();
+        _outToClient.flush();
+        _objIn = new ObjectInputStream(socket.getInputStream());
         //this._dataIn = new DataInputStream(socket.getInputStream());
-        this._outToClient = _socket.getOutputStream();
         } catch (IOException e) { System.out.println("Error in ClientHandler constructor"); e.printStackTrace(); }
     }
 
@@ -133,16 +134,10 @@ public class ClientHandler implements Runnable {
                 _clientWriters.add(_outToClient);
             }
 
-            //byte[] buffer = new byte[1024];
-            //int bytesRead;
-            // Read incoming tcp messages
-            //while ((bytesRead = _dataIn.read(buffer)) != -1) {
-            //ObjectInputStream objIn = new ObjectInputStream(_socket.getInputStream());
             while (true) {    
-                //byte[] data = Arrays.copyOf(buffer, bytesRead);
-                
-                try {
 
+                try {
+ 
                 //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
                 Object readObject = _objIn.readObject();
                 System.out.println("Received object of type: " + readObject.getClass().getName());
@@ -164,7 +159,7 @@ public class ClientHandler implements Runnable {
                     e.printStackTrace();
                     System.out.println("Error message: ");
                     System.out.println(e.getMessage());
-
+                    break;
                 }
             }
         } finally {
