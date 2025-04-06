@@ -15,7 +15,6 @@ public class Message implements Serializable {
     public static final int MSG_SCORE = 8; // Server sending client their score after answering (either was correct (+10), incorrect (-10), or time expired (-20))
     public static final int MSG_GAME_OVER = 9; // Server sending game over message (with results)
     public static final int MSG_TIMEOUT = 11;
-    public static final int MSG_JOIN_REQUEST = 12;
     public static final int MSG_LEAVE = 13;
 
     private int _type;

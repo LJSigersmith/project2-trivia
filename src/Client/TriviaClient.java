@@ -124,7 +124,7 @@ public class TriviaClient extends ClientWindow {
 	private void sendJoinMessage() {
 
 			Message joinMessage = new Message();
-			joinMessage.setType(Message.MSG_JOIN_REQUEST);
+			joinMessage.setType(Message.MSG_JOIN_GAME_REQUEST);
 			joinMessage.setNodeID(clientID);
 			joinMessage.setTimestamp(System.currentTimeMillis());
 			joinMessage.setData(null);
