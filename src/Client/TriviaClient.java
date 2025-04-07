@@ -33,15 +33,6 @@ public class TriviaClient extends ClientWindow {
 	private boolean canAnswer = false;
 	private boolean polling = false;
 
-	// UI elements
-	private JFrame window;
-	private JLabel questionLabel;
-	private JLabel scoreLabel;
-	private JButton pollButton;
-	private JButton submitButton;
-	private JRadioButton[] options;
-	private ButtonGroup optionGroup;
-
 	// Timer variables
 	private TimerTask clock;
 	private JLabel timerLabel;
@@ -54,7 +45,7 @@ public class TriviaClient extends ClientWindow {
 	 * Constructor sets up the client and establishes connection with the server
 	 */
 	public TriviaClient(String host, int tcpPort, int udpPort) {
-		//super(); // Initialize the GUI using the parent class constructor
+		super(); // Initialize the GUI using the parent class constructor
 
 		// Get client ID from user
 		String clientIDStr = JOptionPane.showInputDialog("Enter your client ID (1-10):");
@@ -190,6 +181,7 @@ public class TriviaClient extends ClientWindow {
 
 			case Message.MSG_QUESTION:
 				// New question received
+				System.out.println("Question recieved");
 				handleNewQuestion(message);
 				break;
 
@@ -234,6 +226,8 @@ public class TriviaClient extends ClientWindow {
 			currentQuestion++;
 
 			// Set question text
+			System.out.println("Deseriaized Question");
+			System.out.println(question);
 			setQuestion("Q" + currentQuestion + ". " + question.getQuestion());
 
 			// Set options
@@ -328,7 +322,7 @@ public class TriviaClient extends ClientWindow {
 	 * Get option radio button by index
 	 */
 	private JRadioButton getOption(int i) {
-		return options[i];
+		return super.options[i];
 	}
 
 	/**
@@ -571,6 +565,7 @@ public class TriviaClient extends ClientWindow {
 	 * Update question display
 	 */
 	private void setQuestion(String text) {
+		System.out.println("Setting q text: " + text);
 		getQuestionLabel().setText(text);
 	}
 
@@ -578,6 +573,9 @@ public class TriviaClient extends ClientWindow {
 	 * Get question label
 	 */
 	private JLabel getQuestionLabel() {
+		if (questionLabel == null) {
+			questionLabel = new JLabel("Question will appear here");
+		}
 		return questionLabel;
 	}
 

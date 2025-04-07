@@ -8,14 +8,14 @@ import java.awt.event.ActionListener; /**
  */
 public abstract class ClientWindow implements ActionListener {
 	// Window components
-	private JFrame window;
-	private JLabel questionLabel;
-	private JLabel scoreLabel;
-	private JLabel timerLabel;
-	private JButton pollButton;
-	private JButton submitButton;
-	private JRadioButton[] options;
-	private ButtonGroup optionGroup;
+	protected JFrame window;
+	protected JLabel questionLabel;
+	protected JLabel scoreLabel;
+	protected JLabel timerLabel;
+	protected JButton pollButton;
+	protected JButton submitButton;
+	protected JRadioButton[] options;
+	protected ButtonGroup optionGroup;
 
 	/**
 	 * Constructor to initialize the GUI
