@@ -2,8 +2,9 @@ package common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-public class Question {
+public class Question implements Serializable {
     
     private String question;
     private String[] options;

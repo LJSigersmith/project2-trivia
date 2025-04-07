@@ -35,12 +35,12 @@ public class Server {
 
     // Players
     private int _numPlayers = 0;
-    public void incrementPlayers() { _numPlayers++; }
+    public void incrementPlayers() { System.out.println("incrementing players"); _numPlayers++; System.out.println("num players: " + _numPlayers);}
     Boolean _gameStarted = false;
     public static final ArrayList<ClientHandler> _clientHandlers = new ArrayList<ClientHandler>();
 
     // Polling
-    ArrayList<Player> _pollingQueue;
+    ArrayList<Player> _pollingQueue = new ArrayList<Player>();
     public void addToPollingQueue(Player player) { _pollingQueue.add(player); }
 
     // Question Loop
@@ -247,6 +247,7 @@ public class Server {
         while (_numPlayers < 2) {
             try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
         }
+        System.out.println("2 players joined");
         // Wait 5 seconds to give other players time to join
         try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
         

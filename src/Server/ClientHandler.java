@@ -15,7 +15,8 @@ public class ClientHandler implements Runnable {
     private final Socket _socket;
     //private BufferedReader _in;
     //private DataInputStream _dataIn;
-    private OutputStream _outToClient;
+    //private OutputStream _outToClient;
+    private ObjectOutputStream _outToClient;
     private ObjectInputStream _objIn;
 
     InetAddress _clientIP;
@@ -25,14 +26,14 @@ public class ClientHandler implements Runnable {
 
     private final Server _server;
 
-    private static final CopyOnWriteArrayList<OutputStream> _clientWriters = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<ObjectOutputStream> _clientWriters = new CopyOnWriteArrayList<>();
     
     public ClientHandler(Socket socket, Server server) {
         _socket = socket;
         _server = server;
         try {
         //this._in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        _outToClient = _socket.getOutputStream();
+        _outToClient = new ObjectOutputStream(_socket.getOutputStream());
         _outToClient.flush();
         _objIn = new ObjectInputStream(socket.getInputStream());
         //this._dataIn = new DataInputStream(socket.getInputStream());
@@ -74,17 +75,11 @@ public class ClientHandler implements Runnable {
     }
 
     // Sending to Client
-    private static void  _sendMessageToClient(OutputStream outToClient, Message message) {
+    private static void  _sendMessageToClient(ObjectOutputStream outToClient, Message message) {
 
         try {
 
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-            objectStream.writeObject(message);
-            objectStream.flush();
-            byte[] data = byteStream.toByteArray();
-
-            outToClient.write(data);
+            outToClient.writeObject(message);
             outToClient.flush();
 
         } catch (IOException e) {
@@ -94,8 +89,11 @@ public class ClientHandler implements Runnable {
 
     }
     public static void sendMessageToAllClients(Message message) {
-        for (OutputStream outToClient : _clientWriters) {
+        
+        System.out.println("Sending message to all clients");
+        for (ObjectOutputStream outToClient : _clientWriters) {
 
+            System.out.println("Sending message to client: " + message);
             _sendMessageToClient(outToClient, message);
 
         }
@@ -104,13 +102,9 @@ public class ClientHandler implements Runnable {
 
         try {
 
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-            objectStream.writeObject(message);
-            objectStream.flush();
-            byte[] data = byteStream.toByteArray();
-
-            _outToClient.write(data);
+            //ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            //ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+            _outToClient.writeObject(message);
             _outToClient.flush();
 
         } catch (IOException e) {
