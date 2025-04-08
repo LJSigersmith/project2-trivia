@@ -58,6 +58,7 @@ public class Server extends ServerWindow {
     public static int STAGE_STARTING_GAME = 1;
     public static int STAGE_ACCEPTING_POLLING = 2;
     public static int STAGE_ACCEPTING_ANSWER = 3;
+    public static int STAGE_BETWEEN_QUESTIONS = 4;
     private int _gameStage = STAGE_NOT_STARTED;
     public int getGameStage() { return _gameStage; }
 
@@ -79,7 +80,7 @@ public class Server extends ServerWindow {
 
 				String[] options = optionsString.split(", ");
 
-				Question newQuestion = new Question(question, options, correctOption);
+				Question newQuestion = new Question(question, options, correctOption, i);
 				_questions.add(newQuestion);
 
 			}
@@ -168,7 +169,7 @@ public class Server extends ServerWindow {
             questionMessage.setNodeID(_nodeID);
 
             // Send question without correctOption so player cant cheat
-            Question questionForClient = new Question(question.getQuestion(), question.getOptions(), null);
+            Question questionForClient = new Question(question.getQuestion(), question.getOptions(), null, question.getQuestionNumber());
             questionMessage.setData(questionForClient.toBytes());
 
             // Update Server GUI
@@ -377,7 +378,8 @@ public class Server extends ServerWindow {
             GUI_updateQuestionPanelTitle(_currentQuestionIndex);
 
             GUI_updateGameStatusLabel("Moving To Next Question");
-            // Sleep 6 seconds for clients to see their score
+            _gameStage = STAGE_BETWEEN_QUESTIONS;
+            // Sleep 6 seconds for clients to see their score and to accept any waiting new players
             try { Thread.sleep(6000); } catch (InterruptedException e) { e.printStackTrace(); }
 
             GUI_updateClientAnswerLabel("");
