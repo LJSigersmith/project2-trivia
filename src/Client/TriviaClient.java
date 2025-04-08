@@ -71,7 +71,7 @@ public class TriviaClient extends ClientWindow {
 		this.clientID = clientID;
 
 
-		System.out.println("Attempting to connect to server...");
+		System.out.println("Attempting to connect to server at " + host + "...");
 		try {
 			// Connect to server
 			serverAddress = InetAddress.getByName(host);
