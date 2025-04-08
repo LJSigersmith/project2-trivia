@@ -9,6 +9,7 @@ public class Question implements Serializable {
     private String question;
     private String[] options;
     private String correctOption;
+    private int questionNumber;
 
     public static Question fromBytes(byte[] data) {
         return null;
@@ -26,11 +27,15 @@ public class Question implements Serializable {
     public String getCorrectOption() {
         return correctOption;
     }
+    public int getQuestionNumber() {
+        return questionNumber;
+    }
 
-    public Question(String question, String[] options, String correctOption) {
+    public Question(String question, String[] options, String correctOption, int questionNumber) {
         this.question = question;
         this.options = options;
         this.correctOption = correctOption;
+        this.questionNumber = questionNumber;
     }
 
     public String toString() {

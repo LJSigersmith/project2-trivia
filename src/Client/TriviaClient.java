@@ -29,7 +29,6 @@ public class TriviaClient extends ClientWindow {
 	// Client identification
 	private final int clientID;
 	private int currentScore = 0;
-	private int currentQuestion = 1;
 	private boolean canAnswer = false;
 	private boolean polling = false;
 
@@ -222,12 +221,10 @@ public class TriviaClient extends ClientWindow {
 			Question question = (Question) ois.readObject();
 			ois.close();
 
-			currentQuestion++;
-
 			// Set question text
 			System.out.println("Deseriaized Question");
 			System.out.println(question);
-			setQuestion("Q" + currentQuestion + ". " + question.getQuestion());
+			setQuestion("Q" + question.getQuestionNumber() + ". " + question.getQuestion());
 
 			// Set options
 			String[] options = question.getOptions();
@@ -464,7 +461,7 @@ public class TriviaClient extends ClientWindow {
 			pollMessage.setType(Message.MSG_POLL);
 			pollMessage.setNodeID(clientID);
 			pollMessage.setTimestamp(System.currentTimeMillis());
-			pollMessage.setData(Integer.toString(currentQuestion).getBytes());
+			pollMessage.setData(null);
 
 			// Serialize the message
 			ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -477,7 +474,7 @@ public class TriviaClient extends ClientWindow {
 			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, udpPort);
 			udpSocket.send(sendPacket);
 
-			System.out.println("Sent poll to server for question " + currentQuestion);
+			System.out.println("Sent poll to server for question ");
 		} catch (IOException e) {
 			System.out.println("Error sending poll: " + e.getMessage());
 		}

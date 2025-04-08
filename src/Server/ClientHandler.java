@@ -66,6 +66,20 @@ public class ClientHandler implements Runnable {
             // Acknowledge request
             Message acknowledgementMessage = _server.getAckJoinMessage();
             _sendMessageToClient(_outToClient, acknowledgementMessage);
+        } else {
+            // wait until server is between questions
+            while (_server.getGameStage() != Server.STAGE_BETWEEN_QUESTIONS) { try { Thread.sleep(10); } catch (InterruptedException e) { e.printStackTrace(); } }
+            Player newPlayer = new Player(messageAddress, messagePort, message.getNodeID());
+            //_server.addPlayer((newPlayer));
+            _server.incrementPlayers();
+            System.out.println("Player joined: " + newPlayer.getNodeID() + " from " + newPlayer.getAddress() + ":" + newPlayer.getPort());
+
+            _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
+            _server.GUI_updatePlayerScoresList(Server._clientHandlers);
+        
+            // Acknowledge request
+            Message acknowledgementMessage = _server.getAckJoinMessage();
+            _sendMessageToClient(_outToClient, acknowledgementMessage);
         }
     }
     private void _handleReadyToStart(Message message, InetAddress messageAddress, int messagePort) {
