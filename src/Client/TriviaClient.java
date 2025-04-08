@@ -573,7 +573,7 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private JLabel getQuestionLabel() {
 		if (questionLabel == null) {
-			questionLabel = new JLabel("Question will appear here");
+			questionLabel = new JLabel("<html>Question will appear here</html>");
 			questionLabel.setVerticalAlignment(SwingConstants.TOP);
 		}
 		return questionLabel;
@@ -584,6 +584,7 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private void setOption(int index, String text) {
 		if (index >= 0 && index < 4) {
+			String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
 			getOption(index).setText(text);
 		}
 	}
