@@ -31,6 +31,7 @@ public class Server extends ServerWindow {
     // Game
     private ArrayList<Question> _questions = new ArrayList<Question>();
     private Question _currentQuestion;
+    public Question getCurrentQuestion() { return _currentQuestion; }
     private int _numQuestions;
     private int _currentQuestionIndex;
 
@@ -169,6 +170,9 @@ public class Server extends ServerWindow {
             Question questionForClient = new Question(question.getQuestion(), question.getOptions(), null);
             questionMessage.setData(questionForClient.toBytes());
 
+            // Update Server GUI
+            GUI_updateQuestionLabel(question);
+
             ClientHandler.sendMessageToAllClients(questionMessage);
 
     }
@@ -178,7 +182,7 @@ public class Server extends ServerWindow {
         Player player = new Player(messagAddress, messagePort, message.getNodeID());
         System.out.println("Player polled: " + player);
         addToPollingQueue(player);
-        addToPollingQueueLabel(player);
+        GUI_updatePollingQueueLabel(_pollingQueue);
     }
     private void _listenForUDPMessages() {
 
@@ -259,6 +263,7 @@ public class Server extends ServerWindow {
         try { Thread.sleep(5000); } catch (InterruptedException e) { e.printStackTrace(); }
         
         _gameStage = STAGE_STARTING_GAME;
+        GUI_updateGameStatusLabel("Game Starting");
         // Tell all players game is starting
         Message startGameMessage = getStartGameMessage();
         ClientHandler.sendMessageToAllClients(startGameMessage);
@@ -279,7 +284,9 @@ public class Server extends ServerWindow {
 
             // Send question to all active players with time polling will expire
             _gameStage = STAGE_ACCEPTING_POLLING;
+            GUI_updateGameStatusLabel("Accepting Polling");
             _pollingQueue.clear();
+            GUI_updatePollingQueueLabel(_pollingQueue);
             _questionAnswered = false;
             _pollExpiration = System.currentTimeMillis() + 15000; // 15 seconds to poll
             _broadcastQuestion(_currentQuestion, _pollExpiration);
@@ -287,22 +294,33 @@ public class Server extends ServerWindow {
             System.out.println("Polling Time Beginning...");
             while (System.currentTimeMillis() < _pollExpiration) {} // wait for polling time to expire
             _gameStage = STAGE_ACCEPTING_ANSWER;
+            GUI_updateGameStatusLabel("Accepting Answer");
+            moveToNextQuestion = false;
 
             // Send GOOD TO ANSWER to first player to poll with time allowed to answer
             while (!moveToNextQuestion) {
 
                 // if nobody polled, move on
-                if (_pollingQueue.size() == 0) { System.out.println("Nobody polled, next question"); moveToNextQuestion = true; continue; }
+                if (_pollingQueue.size() == 0) { System.out.println("Nobody in poll queue, next question"); moveToNextQuestion = true; continue; }
 
                 Player firstToPoll = _pollingQueue.get(0);
                 System.out.println("First player to poll: " + firstToPoll);
                 _playerAnswer = "";
+                _questionAnswered = false;
                 _answerExpiration = System.currentTimeMillis() + 10000; // 10 sec to answer
                 Message goodToAnswerMessage = getGoodToAnsMessage(_answerExpiration);
                 _sendMessageToClient(goodToAnswerMessage, firstToPoll);
                 
+
+                GUI_updateClientAnswerLabel("");
+                GUI_updateClientAnsweredLabel(false);
+                GUI_updateClientAnsweringLabel(firstToPoll);
+
                 System.out.println("Answer Time Starting");
                 while (!_questionAnswered && System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
+
+                GUI_updateClientAnswerLabel(_playerAnswer);
+                GUI_updateClientAnsweredLabel(_questionAnswered);
 
                 // Check answer
                 int playerScoreUpdate = 0;
@@ -310,30 +328,55 @@ public class Server extends ServerWindow {
                     System.out.println("Player did not answer question");
                     playerScoreUpdate = -20;
                 }
-                if (_questionAnswered && _playerAnswer == _currentQuestion.getCorrectOption()) { // player answered right, go to next question
+
+                Boolean wasAnswerCorrect = false;
+                if (_playerAnswer.equals(_currentQuestion.getCorrectOption())) { wasAnswerCorrect = true; }
+                System.out.println("Was Answer Correct?: " + wasAnswerCorrect);
+                
+                if (_questionAnswered && wasAnswerCorrect) { // player answered right, go to next question
                     System.out.println("Player answered correctly");
                     playerScoreUpdate = 10;
                     moveToNextQuestion = true;
                 }
-                if (_questionAnswered && _playerAnswer != _currentQuestion.getCorrectOption()) { // player answered wrong, go to next in polling queue
+                if (_questionAnswered && !wasAnswerCorrect) { // player answered wrong, go to next in polling queue
                     System.out.println("Player answered incorrectly");
                     playerScoreUpdate = -10;
                 }
                 // Send SCORE back to client answering
                 Message scoreMessage = getScoreMessage(playerScoreUpdate);
                 _sendMessageToClient(scoreMessage, firstToPoll);
+
+                // Set SCORE on server side
+                for (ClientHandler client : _clientHandlers) {
+                    if (client.getClientID() == firstToPoll.getNodeID()) {
+                        client.updateClientScore(playerScoreUpdate);
+                        break;
+                    }
+                }
+                GUI_updatePlayerScoresList(_clientHandlers);
             
                 if (moveToNextQuestion) { continue; }
                 if (_pollingQueue.size() == 0) { moveToNextQuestion = true; continue; } // if nobody left in polling queue, go to next question
 
                 // remove all instances of player in polling queue (they already had their chance to answer)
-                _pollingQueue.removeIf(player -> player.equals(firstToPoll));
+                _pollingQueue.removeIf(player -> player.getNodeID() == firstToPoll.getNodeID());
+                GUI_updatePollingQueueLabel(_pollingQueue);
+                System.out.println("Moving to next in polling queue");
+                System.out.println("Polling Queue: " + _pollingQueue);
                 // loop back to next in poll queue
 
             }
 
             // Move on to next question
             _currentQuestionIndex++;
+
+            GUI_updateGameStatusLabel("Moving To Next Question");
+            // Sleep 6 seconds for clients to see their score
+            try { Thread.sleep(6000); } catch (InterruptedException e) { e.printStackTrace(); }
+
+            GUI_updateClientAnswerLabel("");
+            GUI_updateClientAnsweredLabel(false);
+            GUI_updateClientAnsweringLabel(null);
 
         }
     
@@ -378,12 +421,22 @@ public class Server extends ServerWindow {
         return scoreMessage;
     }
     public Message getGameOverMessage() {
-        Message scoreMessage = new Message();
-        scoreMessage.setType(Message.MSG_GAME_OVER);
-        scoreMessage.setNodeID(_nodeID);
-        scoreMessage.setTimestamp(System.currentTimeMillis()); // time when answering is allowed until (10 secs)
-        scoreMessage.setData(null);
-        return scoreMessage;
+    
+        byte[] gameResults;
+        ArrayList<String> gameResultArray = new ArrayList<String>();
+        for (ClientHandler client : _clientHandlers) {
+            String clientScore = "Client " + client.getClientID() + " Score: " + client.getClientScore();
+            gameResultArray.add(clientScore); 
+        }
+        gameResults = String.join("\n", gameResultArray).getBytes();
+
+        Message gameOverMesage = new Message();
+        gameOverMesage.setType(Message.MSG_GAME_OVER);
+        gameOverMesage.setNodeID(_nodeID);
+        gameOverMesage.setTimestamp(System.currentTimeMillis());
+        gameOverMesage.setData(gameResults);
+
+        return gameOverMesage;
     }
 
     @Override

@@ -20,6 +20,9 @@ public class Question implements Serializable {
     public String[] getOptions() {
         return options;
     }
+    public String getOption(int i) {
+        return options[i];
+    }
     public String getCorrectOption() {
         return correctOption;
     }

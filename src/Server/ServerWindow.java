@@ -3,6 +3,9 @@ package Server;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
 
 import common.Question;
 import common.Player;
@@ -16,6 +19,9 @@ public abstract class ServerWindow implements ActionListener {
     protected JLabel clientAnsweredLabel;
     protected JLabel clientAnsweringLabel;
     protected JLabel clientAnswerLabel;
+    protected JLabel correctOptionLabel;
+    protected JLabel gameStatusLabel;
+    protected JList<String> playerScoresList;
 
     public ServerWindow() {
 
@@ -33,7 +39,14 @@ public abstract class ServerWindow implements ActionListener {
         questionPanel.setLayout(new BorderLayout());
         currentQuestionLabel = new JLabel("<html>Current Question:<br/>A. Option A<br/>B. Option B<br/>C. Option C</html>");
         questionPanel.add(currentQuestionLabel, BorderLayout.CENTER);
+
+        // Add label for the correct option
+        correctOptionLabel = new JLabel("Correct Option: ");
+        correctOptionLabel.setForeground(new Color(0, 128, 0)); // Set text color to darker green
+        questionPanel.add(correctOptionLabel, BorderLayout.SOUTH);
+
         questionPanel.setBorder(BorderFactory.createTitledBorder("Current Question"));
+        questionPanel.setPreferredSize(new Dimension(800, 100));
         mainPanel.add(questionPanel, BorderLayout.NORTH);
 
         // Create a split panel to hold the left and right side content
@@ -48,6 +61,7 @@ public abstract class ServerWindow implements ActionListener {
         pollingQueueList = new JList<>(new DefaultListModel<>());
         pollingQueuePanel.add(new JScrollPane(pollingQueueList), BorderLayout.CENTER);
         pollingQueuePanel.setBorder(BorderFactory.createTitledBorder("Polling Queue"));
+        pollingQueuePanel.setPreferredSize(new Dimension(200, 200));
         leftPanel.add(pollingQueuePanel);
 
         // Panel for Connected Players
@@ -56,6 +70,7 @@ public abstract class ServerWindow implements ActionListener {
         connectedPlayersList = new JList<>(new DefaultListModel<>());
         connectedPlayersPanel.add(new JScrollPane(connectedPlayersList), BorderLayout.CENTER);
         connectedPlayersPanel.setBorder(BorderFactory.createTitledBorder("Connected Players"));
+        connectedPlayersPanel.setPreferredSize(new Dimension(200, 200));
         rightPanel.add(connectedPlayersPanel);
 
         // Panel for Client Info
@@ -63,13 +78,13 @@ public abstract class ServerWindow implements ActionListener {
         clientInfoPanel.setLayout(new GridLayout(3, 1, 5, 5));  // 3 rows for each label
         clientInfoPanel.setBorder(BorderFactory.createTitledBorder("Client Info"));
         
-        clientAnsweredLabel = new JLabel("Client Answered: ");
+        clientAnsweredLabel = new JLabel("Player Answered: ");
         clientInfoPanel.add(clientAnsweredLabel);
 
-        clientAnswerLabel = new JLabel("Client Answer: ");
+        clientAnswerLabel = new JLabel("Player Answer: ");
         clientInfoPanel.add(clientAnswerLabel);
 
-        clientAnsweringLabel = new JLabel("Client Answering: ");
+        clientAnsweringLabel = new JLabel("Player Answering: ");
         clientInfoPanel.add(clientAnsweringLabel);
         
         rightPanel.add(clientInfoPanel);
@@ -78,6 +93,23 @@ public abstract class ServerWindow implements ActionListener {
         mainPanel.add(leftPanel, BorderLayout.WEST);
         mainPanel.add(rightPanel, BorderLayout.EAST);
 
+        JPanel middlePanel = new JPanel();
+        middlePanel.setLayout(new BoxLayout(middlePanel, BoxLayout.Y_AXIS));
+
+        gameStatusLabel = new JLabel("Game Stage: Game Not Started");
+        middlePanel.add(gameStatusLabel);
+
+        // Panel for Player Scores
+        JPanel playerScoresPanel = new JPanel();
+        playerScoresPanel.setLayout(new BorderLayout());
+        playerScoresList = new JList<>(new DefaultListModel<>());
+        playerScoresPanel.add(new JScrollPane(playerScoresList), BorderLayout.CENTER);
+        playerScoresPanel.setBorder(BorderFactory.createTitledBorder("Player Scores"));
+        playerScoresPanel.setPreferredSize(new Dimension(400, 200));
+        middlePanel.add(playerScoresPanel);
+
+        mainPanel.add(middlePanel, BorderLayout.CENTER);  // Add to the center section of the layout
+
         // Log Text Area at the bottom
         JTextArea logArea = new JTextArea(5, 40);  // 5 rows, 40 columns
         logArea.setEditable(false);  // Make the log area non-editable
@@ -85,11 +117,18 @@ public abstract class ServerWindow implements ActionListener {
         logScrollPane.setBorder(BorderFactory.createTitledBorder("Log"));
         mainPanel.add(logScrollPane, BorderLayout.SOUTH);
 
+        // Create a custom OutputStream that appends text to JTextArea
+        OutputStream outputStream = new JTextAreaOutputStream(logArea);
+        PrintStream printStream = new PrintStream(outputStream);
+
+        // Redirect System.out to the JTextArea
+        System.setOut(printStream);
+
         // Set the frame to be visible
         frame.setVisible(true);
     }
 
-    protected void updateQuestionLabel(Question question) {
+    protected void GUI_updateQuestionLabel(Question question) {
 
         StringBuilder questionText = new StringBuilder("<html>");
         questionText.append("Current Question:<br/>");
@@ -100,35 +139,75 @@ public abstract class ServerWindow implements ActionListener {
         }
         questionText.append("</html>");
         currentQuestionLabel.setText(questionText.toString());
+        correctOptionLabel.setText(question.getCorrectOption());
 
     }
-    protected void addToPollingQueueLabel(Player player) {
+    protected void GUI_updatePollingQueueLabel(ArrayList<Player> pollingQueue) {
+        GUI_clearPollingQueueLabel();
         DefaultListModel<String> model = (DefaultListModel<String>) pollingQueueList.getModel();
-        model.addElement(player.toString());
+        for (Player player : pollingQueue) {
+            model.addElement(player.toString());
+        }
         pollingQueueList.setModel(model);
     }
-    protected void clearPollingQueueLabel() {
+    protected void GUI_clearPollingQueueLabel() {
         pollingQueueList.setModel(new DefaultListModel<>());
     }
-    protected void addToConnectedPlayersList(Player player) {
+    protected void GUI_updateConnectedPlayersList(ArrayList<ClientHandler> connectedPlayers) {
+        GUI_clearConnectedPlayersList();
         DefaultListModel<String> model = (DefaultListModel<String>) connectedPlayersList.getModel();
-        model.addElement(player.toString());
+        for (ClientHandler client : connectedPlayers) {
+            model.addElement(client.toString());
+        }
         connectedPlayersList.setModel(model);
     }
-    protected void clearConnectedPlayersList() {
+    protected void GUI_clearConnectedPlayersList() {
         connectedPlayersList.setModel(new DefaultListModel<>());
     }
-    protected void updateClientAnsweredLabel(Boolean update) {
+    protected void GUI_updateClientAnsweredLabel(Boolean update) {
         if (update) {
-            clientAnsweredLabel.setText("TRUE");
+            clientAnsweredLabel.setText("Player Answered: TRUE");
         } else {
-            clientAnswerLabel.setText("FALSE");
+            clientAnsweredLabel.setText("Player Answered: FALSE");
         }
     }
-    protected void updateClientAnsweringLabel(Player player) {
-        clientAnsweringLabel.setText(player.toString());
+    protected void GUI_updateClientAnsweringLabel(Player player) {
+        if (player == null) { clientAnsweringLabel.setText("Player Answering:"); return; }
+        clientAnsweringLabel.setText("Player Answering :" + player.toString());
     }
-    protected void updateClientAnswerLabel(String ans) {
-        clientAnswerLabel.setText(ans);
+    protected void GUI_updateClientAnswerLabel(String ans) {
+        clientAnswerLabel.setText("Player Answer: " + ans);
+    }
+
+    // New method to update the game status label
+    protected void GUI_updateGameStatusLabel(String status) {
+        gameStatusLabel.setText("Game Stage: " + status);
+    }
+
+    // New method to update the player scores list
+    protected void GUI_updatePlayerScoresList(ArrayList<ClientHandler> clients) {
+        DefaultListModel<String> model = (DefaultListModel<String>) playerScoresList.getModel();
+        model.clear();
+        for (ClientHandler client : clients) {
+            model.addElement(client.toString() + " - Score: " + client.getClientScore());
+        }
+        playerScoresList.setModel(model);
+    }
+
+    // Custom OutputStream that writes to JTextArea
+    static class JTextAreaOutputStream extends OutputStream {
+        private JTextArea textArea;
+
+        public JTextAreaOutputStream(JTextArea textArea) {
+            this.textArea = textArea;
+        }
+
+        @Override
+        public void write(int b) {
+            // Append character to JTextArea
+            textArea.append(String.valueOf((char) b));
+            // Automatically scroll to the end
+            textArea.setCaretPosition(textArea.getDocument().getLength());
+        }
     }
 }

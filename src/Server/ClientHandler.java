@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import common.Message;
 import common.Player;
+import common.Question;
 
 public class ClientHandler implements Runnable {
     
@@ -25,6 +26,9 @@ public class ClientHandler implements Runnable {
     public int getClientPort() { return _clientPort; }
     int _clientID = -1;
     public int getClientID() { return _clientID; }
+    int _clientScore = 0;
+    public int getClientScore() { return _clientScore; }
+    public void updateClientScore(int c) { _clientScore += c; }
 
     private final Server _server;
 
@@ -42,6 +46,11 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) { System.out.println("Error in ClientHandler constructor"); e.printStackTrace(); }
     }
 
+    @Override
+    public String toString() {
+        return _clientIP + ":" + _clientPort + "::ID_" + _clientID;
+    }
+
     private void _handleJoinGameRequest(Message message, InetAddress messageAddress, int messagePort) {
         
         // Server is waiting for players
@@ -51,15 +60,8 @@ public class ClientHandler implements Runnable {
             _server.incrementPlayers();
             System.out.println("Player joined: " + newPlayer.getNodeID() + " from " + newPlayer.getAddress() + ":" + newPlayer.getPort());
 
-            // Update Server GUI
-            try {
-                synchronized (_server) {
-                    _server.addToConnectedPlayersList(newPlayer);
-                }
-            } catch (Exception e) {
-                System.out.println("Error adding player to connected players list: " + e.getMessage());
-                e.printStackTrace();
-            }
+            _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
+            _server.GUI_updatePlayerScoresList(Server._clientHandlers);
         
             // Acknowledge request
             Message acknowledgementMessage = _server.getAckJoinMessage();
@@ -88,9 +90,19 @@ public class ClientHandler implements Runnable {
     private void _handleAnswer(Message message, InetAddress messageAddress, int messagePort) {
 
         if (_server.getGameStage() == Server.STAGE_ACCEPTING_ANSWER) {
-            System.out.println("Player answered: " + message.getData().toString());
-            _server.setPlayerAnswer(message.getData().toString());
+
+            byte[] answerData = message.getData();
+            int answerOpt = Integer.parseInt(new String(answerData).trim());
+            System.out.println("Player answered option#: " + answerOpt);
+            Question currQ = _server.getCurrentQuestion();
+            String answerString = currQ.getOption(answerOpt - 1);
+
+            System.out.println("Player Answer: " + answerString);
+            _server.setPlayerAnswer(answerString);
             _server.setQuestionAnswered();
+
+            _server.GUI_updateClientAnswerLabel(answerString);
+            _server.GUI_updateClientAnsweredLabel(true);
         }
 
     }
@@ -190,6 +202,7 @@ public class ClientHandler implements Runnable {
                 // Remove client from list and close streams when client disconnects
                 synchronized (_clientWriters) {
                     _clientWriters.remove(_outToClient);
+                    _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
                 }
                 _socket.close();
                 //_in.close();
