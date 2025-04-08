@@ -23,6 +23,7 @@ public abstract class ServerWindow implements ActionListener {
     protected JLabel correctOptionLabel;
     protected JLabel gameStatusLabel;
     protected JList<String> playerScoresList;
+    private JPanel questionPanel;
 
     public ServerWindow() {
 
@@ -36,23 +37,29 @@ public abstract class ServerWindow implements ActionListener {
         frame.add(mainPanel);
 
         // Create the panel for the current question and options
-        JPanel questionPanel = new JPanel();
+        questionPanel = new JPanel();
         questionPanel.setLayout(new BorderLayout());
-        currentQuestionLabel = new JLabel("<html>Current Question:<br/>A. Option A<br/>B. Option B<br/>C. Option C</html>");
+        currentQuestionLabel = new JLabel("<html>Current Question:<br/>A. Option A<br/>B. Option B<br/>C. Option C<br />D. Option D</html>");
         questionPanel.add(currentQuestionLabel, BorderLayout.CENTER);
+
+        // Panel for correct option and timer
+        JPanel optionsAndTimerPanel = new JPanel();
+        optionsAndTimerPanel.setLayout(new BoxLayout(optionsAndTimerPanel, BoxLayout.Y_AXIS));
 
         // Add label for the correct option
         correctOptionLabel = new JLabel("Correct Option: ");
         correctOptionLabel.setForeground(new Color(0, 128, 0)); // Set text color to darker green
-        questionPanel.add(correctOptionLabel, BorderLayout.SOUTH);
+        optionsAndTimerPanel.add(correctOptionLabel);
 
         // Add the Timer Label
         timerLabel = new JLabel("Time Remaining: --");
         timerLabel.setHorizontalAlignment(SwingConstants.CENTER);  // Center the timer horizontally
-        questionPanel.add(timerLabel, BorderLayout.NORTH);  // Add the timer label above the current question label
+        optionsAndTimerPanel.add(timerLabel);
+
+        questionPanel.add(optionsAndTimerPanel, BorderLayout.SOUTH);
 
         questionPanel.setBorder(BorderFactory.createTitledBorder("Current Question"));
-        questionPanel.setPreferredSize(new Dimension(800, 100));
+        questionPanel.setPreferredSize(new Dimension(800, 150));
         mainPanel.add(questionPanel, BorderLayout.NORTH);
 
         // Create a split panel to hold the left and right side content
@@ -67,7 +74,7 @@ public abstract class ServerWindow implements ActionListener {
         pollingQueueList = new JList<>(new DefaultListModel<>());
         pollingQueuePanel.add(new JScrollPane(pollingQueueList), BorderLayout.CENTER);
         pollingQueuePanel.setBorder(BorderFactory.createTitledBorder("Polling Queue"));
-        pollingQueuePanel.setPreferredSize(new Dimension(200, 200));
+        pollingQueuePanel.setPreferredSize(new Dimension(200, 400));
         leftPanel.add(pollingQueuePanel);
 
         // Panel for Connected Players
@@ -196,7 +203,11 @@ public abstract class ServerWindow implements ActionListener {
         playerScoresList.setModel(model);
     }
     protected void GUI_updateTimer(int timeLeft) {
+        if (timeLeft < 0) { timerLabel.setText("Time Remaining: 0"); return; }
         timerLabel.setText("Time Remaining: " + timeLeft);
+    }
+    protected void GUI_updateQuestionPanelTitle(int qIndex) {
+        questionPanel.setBorder(BorderFactory.createTitledBorder("Question " + (qIndex + 1)));
     }
 
     // Custom OutputStream that writes to JTextArea

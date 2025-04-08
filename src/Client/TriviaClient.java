@@ -271,8 +271,10 @@ public class TriviaClient extends ClientWindow {
 
 			if (scoreChange > 0) {
 				JOptionPane.showMessageDialog(getWindow(), "Correct! +" + scoreChange + " points");
-			} else if (scoreChange < 0) {
+			} else if (scoreChange < 0 && scoreChange > -20) {
 				JOptionPane.showMessageDialog(getWindow(), "Wrong! " + scoreChange + " points");
+			} else {
+				JOptionPane.showMessageDialog(getWindow(), "Didn't Answer In Time! " + scoreChange + " points");
 			}
 
 			// Reset UI for next question

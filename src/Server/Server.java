@@ -87,6 +87,7 @@ public class Server extends ServerWindow {
             _numQuestions = _questions.size();
             _currentQuestion = _questions.get(0);
             _currentQuestionIndex = 0;
+            GUI_updateQuestionPanelTitle(_currentQuestionIndex);
             _numQuestions = _questions.size();
 
 		} catch (IOException e) {
@@ -288,7 +289,7 @@ public class Server extends ServerWindow {
             _pollingQueue.clear();
             GUI_updatePollingQueueLabel(_pollingQueue);
             _questionAnswered = false;
-            _pollExpiration = System.currentTimeMillis() + 15000; // 15 seconds to poll
+            _pollExpiration = System.currentTimeMillis() + 15000 + 2000; // 15 seconds to poll (+2 because client and server are 2 seocnds out of sync)
             Thread timerThread = new Thread(() -> { startTimer(_pollExpiration, 15); });
             timerThread.start();
             _broadcastQuestion(_currentQuestion, _pollExpiration);
@@ -309,7 +310,7 @@ public class Server extends ServerWindow {
                 System.out.println("First player to poll: " + firstToPoll);
                 _playerAnswer = "";
                 _questionAnswered = false;
-                _answerExpiration = System.currentTimeMillis() + 10000; // 10 sec to answer
+                _answerExpiration = System.currentTimeMillis() + 10000 + 2000; // 10 sec to answer (+2 because client and server are out of sync 2 seconds)
                 Message goodToAnswerMessage = getGoodToAnsMessage(_answerExpiration);
                 _sendMessageToClient(goodToAnswerMessage, firstToPoll);
                 
@@ -373,6 +374,7 @@ public class Server extends ServerWindow {
 
             // Move on to next question
             _currentQuestionIndex++;
+            GUI_updateQuestionPanelTitle(_currentQuestionIndex);
 
             GUI_updateGameStatusLabel("Moving To Next Question");
             // Sleep 6 seconds for clients to see their score
