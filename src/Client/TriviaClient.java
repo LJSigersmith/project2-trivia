@@ -45,6 +45,14 @@ public class TriviaClient extends ClientWindow {
 	public TriviaClient(String host, int tcpPort, int udpPort) {
 		super(); // Initialize the GUI using the parent class constructor
 
+		// Prompt for server IP address
+		String serverIP = JOptionPane.showInputDialog("Enter the Server IP address provided:", host);
+		if (serverIP != null && !serverIP.trim().isEmpty()) {
+			host = serverIP;
+		} else {
+			JOptionPane.showMessageDialog(null, "Using default server IP: " + host);
+		}
+
 		// Get client ID from user
 		String clientIDStr = JOptionPane.showInputDialog("Enter your client ID (1-10):");
 		int clientID = 1;
