@@ -35,7 +35,6 @@ public class TriviaClient extends ClientWindow {
 
 	// Timer variables
 	private TimerTask clock;
-	private JLabel timerLabel;
 
 	// Constants
 	private static final int POLL_TIMER = 15;
