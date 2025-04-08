@@ -203,7 +203,30 @@ public class TriviaClient extends ClientWindow {
 
 			case Message.MSG_GAME_OVER:
 				// Game has ended
-				JOptionPane.showMessageDialog(getWindow(), "Game Over!");
+				try {
+					// Check if there's score data in the message
+					if (message.getData() != null && message.getData().length > 0) {
+						String scoreData = new String(message.getData());
+						StringBuilder scoreBoard = new StringBuilder("Game Over!\n\nFinal Scores:\n");
+						scoreBoard.append(scoreData);
+
+						String highlightedScores = scoreBoard.toString().replace(
+								"Client " + clientID,
+								"Client " + clientID + " (You)"
+						);
+
+						// Display the final scoreboard
+						JOptionPane.showMessageDialog(getWindow(), highlightedScores,
+								"Game Over", JOptionPane.INFORMATION_MESSAGE);
+					} else {
+						// No score data, show basic game over
+						JOptionPane.showMessageDialog(getWindow(), "Game Over!");
+					}
+				} catch (Exception e) {
+					// If there's an error processing the scores, just show simple game over message
+					System.out.println("Error processing game over scores: " + e.getMessage());
+					JOptionPane.showMessageDialog(getWindow(), "Game Over!");
+				}
 				break;
 
 			default:
