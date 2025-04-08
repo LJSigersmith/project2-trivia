@@ -65,40 +65,68 @@ public class Server extends ServerWindow {
     // Setup
     private void _loadQuestions() {
 
-		String filePath = "questions.properties";
-		Properties properties = new Properties();
+        // Create a popup window with a dropdown to select a file
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            javax.swing.JFrame frame = new javax.swing.JFrame("Select Question File");
+            frame.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+            frame.setSize(400, 150);
 
-		try {
-			FileInputStream fileInputStream = new FileInputStream(filePath);
-			properties.load(fileInputStream);
-			fileInputStream.close();
+            javax.swing.JComboBox<String> fileDropdown = new javax.swing.JComboBox<>();
+            File questionsDir = new File("questions");
+            if (questionsDir.exists() && questionsDir.isDirectory()) {
+                File[] files = questionsDir.listFiles((dir, name) -> name.endsWith(".properties"));
+                if (files != null) {
+                    for (File file : files) {
+                        fileDropdown.addItem(file.getName());
+                    }
+                }
+            }
 
-			for (int i = 1; i <= 10; i++) {
-				String question = properties.getProperty("question" + i);
-				String optionsString = properties.getProperty("options" + i);
-				String correctOption = properties.getProperty("correct_answer" + i);
+            javax.swing.JButton loadButton = new javax.swing.JButton("Load Questions");
+            loadButton.addActionListener(event -> {
+            String selectedFile = (String) fileDropdown.getSelectedItem();
+            String filePath = "questions/" + selectedFile;
 
-				String[] options = optionsString.split(", ");
+            Properties properties = new Properties();
 
-				Question newQuestion = new Question(question, options, correctOption, i);
-				_questions.add(newQuestion);
+            try {
+                FileInputStream fileInputStream = new FileInputStream(filePath);
+                properties.load(fileInputStream);
+                fileInputStream.close();
 
-			}
+                int numQuestionsInFile = Integer.parseInt(properties.getProperty("num_questions", "0"));
+                for (int i = 1; i <= numQuestionsInFile; i++) {
+                String question = properties.getProperty("question" + i);
+                String optionsString = properties.getProperty("options" + i);
+                String correctOption = properties.getProperty("correct_answer" + i);
 
-            _numQuestions = _questions.size();
-            _currentQuestion = _questions.get(0);
-            _currentQuestionIndex = 0;
-            GUI_updateQuestionPanelTitle(_currentQuestionIndex);
-            _numQuestions = _questions.size();
+                String[] options = optionsString.split(", ");
 
-		} catch (IOException e) {
-			System.out.println("Error loading questions");
-			e.printStackTrace();
-		}
+                Question newQuestion = new Question(question, options, correctOption, i);
+                _questions.add(newQuestion);
+                }
 
-		//for (Question q : questions) {
-		//	System.out.println(q);
-		//}
+                _numQuestions = _questions.size();
+                _currentQuestion = _questions.get(0);
+                _currentQuestionIndex = 0;
+                GUI_updateQuestionPanelTitle(_currentQuestionIndex);
+                //_numQuestions = _questions.size();
+                _numQuestions = 2;
+
+                frame.dispose();
+            } catch (IOException e) {
+                System.out.println("Error loading questions");
+                e.printStackTrace();
+            }
+            });
+
+            javax.swing.JPanel panel = new javax.swing.JPanel();
+            panel.add(fileDropdown);
+            panel.add(loadButton);
+
+            frame.getContentPane().add(panel);
+            frame.setVisible(true);
+        });
 
 	}
     private int _initSocket() {
@@ -155,6 +183,7 @@ public class Server extends ServerWindow {
             }
             _clientHandlers.remove(toRemove);
         }
+        
     }
 
     private void _sendMessageToClient(Message message, Player player) {
@@ -242,6 +271,7 @@ public class Server extends ServerWindow {
     public Server() {
         
         super();
+        killSwitchButton.addActionListener(e -> killSwitchClicked());
         // Load questions from file
         _loadQuestions();
 
@@ -405,6 +435,34 @@ public class Server extends ServerWindow {
         ClientHandler.sendMessageToAllClients(gameOverMessage);
 
         System.out.println("Game completed");
+
+        displayFinalScores();
+    }
+
+    private void displayFinalScores() {
+        // Display final scores in a popup window
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            javax.swing.JFrame frame = new javax.swing.JFrame("Game Over - Final Scores");
+            frame.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+            frame.setSize(400, 300);
+
+            javax.swing.JTextArea scoreTextArea = new javax.swing.JTextArea();
+            scoreTextArea.setEditable(false);
+
+            StringBuilder scores = new StringBuilder("Final Scores:\n");
+            for (ClientHandler client : _clientHandlers) {
+            scores.append("Client ").append(client.getClientID())
+                  .append(": ").append(client.getClientScore()).append("\n");
+            }
+            scoreTextArea.setText(scores.toString());
+
+            javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(scoreTextArea);
+            frame.getContentPane().add(scrollPane);
+
+            frame.setVisible(true);
+        });
+
+        super.frame.setVisible(false);
     }
     
     // Messages
@@ -469,6 +527,46 @@ public class Server extends ServerWindow {
             timeLeft--;
             GUI_updateTimer(timeLeft);
         }
+    }
+
+    public void killSwitchClicked() {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            javax.swing.JFrame frame = new javax.swing.JFrame("Select Client to Kill");
+            frame.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+            frame.setSize(300, 150);
+
+            javax.swing.JComboBox<String> clientDropdown = new javax.swing.JComboBox<>();
+            synchronized (_clientHandlers) {
+                for (ClientHandler client : _clientHandlers) {
+                    clientDropdown.addItem("Client " + client.getClientID());
+                }
+            }
+
+            javax.swing.JButton selectButton = new javax.swing.JButton("Select");
+            selectButton.addActionListener(event -> {
+                String selectedClient = (String) clientDropdown.getSelectedItem();
+                System.out.println("Selected Client To Kill: " + selectedClient);
+                int clientID = Integer.parseInt(selectedClient.split(" ")[1]);
+                synchronized (_clientHandlers) {
+                    for (ClientHandler client : _clientHandlers) {
+                        if (client.getClientID() == clientID) {
+                            client.kill();
+                            removeClient(client);
+                            System.out.println("Client " + clientID + " has been killed and removed.");
+                            break;
+                        }
+                    }
+                }
+                frame.dispose();
+            });
+
+            javax.swing.JPanel panel = new javax.swing.JPanel();
+            panel.add(clientDropdown);
+            panel.add(selectButton);
+
+            frame.getContentPane().add(panel);
+            frame.setVisible(true);
+        });
     }
 
     @Override

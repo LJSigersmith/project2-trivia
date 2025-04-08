@@ -30,6 +30,24 @@ public class ClientHandler implements Runnable {
     public int getClientScore() { return _clientScore; }
     public void updateClientScore(int c) { _clientScore += c; }
 
+    public void kill() {
+        try {
+            // Remove client from list and close streams when client disconnects
+            synchronized (_clientWriters) {
+                _clientWriters.remove(_outToClient);
+                Server.removeClient(this);
+                _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
+                _server.GUI_updatePlayerScoresList(Server._clientHandlers);
+            }
+            _socket.close();
+            //_in.close();
+            _outToClient.close();
+            System.out.println("Client disconnected: " + _socket.getRemoteSocketAddress());
+        } catch (IOException e) {
+            System.out.println("Error closing client: " + e.getMessage());
+        }
+    }
+
     private final Server _server;
 
     private static final CopyOnWriteArrayList<ObjectOutputStream> _clientWriters = new CopyOnWriteArrayList<>();

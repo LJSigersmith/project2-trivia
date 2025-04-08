@@ -24,6 +24,7 @@ public abstract class ServerWindow implements ActionListener {
     protected JLabel gameStatusLabel;
     protected JList<String> playerScoresList;
     private JPanel questionPanel;
+    protected JButton killSwitchButton;
 
     public ServerWindow() {
 
@@ -139,6 +140,18 @@ public abstract class ServerWindow implements ActionListener {
 
         // Set the frame to be visible
         frame.setVisible(true);
+
+        // Create a new frame with just a button
+        JFrame buttonFrame = new JFrame("Kill Switch");
+        buttonFrame.setSize(200, 100);
+        buttonFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        killSwitchButton = new JButton("Kill Switch");
+
+        buttonFrame.add(killSwitchButton, BorderLayout.CENTER);
+        // Position the button frame next to the main frame
+        buttonFrame.setLocation(frame.getX() + frame.getWidth(), frame.getY());
+        buttonFrame.setVisible(true);
     }
 
     protected void GUI_updateQuestionLabel(Question question) {
