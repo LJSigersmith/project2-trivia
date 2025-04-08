@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Trivia Project:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Trivia_Project_jar</output-path>
+    <root id="archive" name="Trivia Project.jar">
+      <element id="module-output" name="Trivia Project" />
+    </root>
+  </artifact>
+</component>

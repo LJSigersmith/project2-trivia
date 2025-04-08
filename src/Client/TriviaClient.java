@@ -567,6 +567,7 @@ public class TriviaClient extends ClientWindow {
 	 */
 	private void setQuestion(String text) {
 		System.out.println("Setting q text: " + text);
+		String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
 		getQuestionLabel().setText(text);
 	}
 
@@ -576,6 +577,7 @@ public class TriviaClient extends ClientWindow {
 	private JLabel getQuestionLabel() {
 		if (questionLabel == null) {
 			questionLabel = new JLabel("Question will appear here");
+			questionLabel.setVerticalAlignment(SwingConstants.TOP);
 		}
 		return questionLabel;
 	}
