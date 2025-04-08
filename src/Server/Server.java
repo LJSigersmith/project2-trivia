@@ -139,9 +139,21 @@ public class Server extends ServerWindow {
             _clientHandlers.add(clientHandler);
         }
     }
-    public static void removeClient(int clientHandler) {
+    public static void removeClient(ClientHandler clientHandler) {
         synchronized (_clientHandlers) {
             _clientHandlers.remove(clientHandler);
+        }
+    }
+    public static void removeClient(int clientID) {
+        synchronized (_clientHandlers) {
+            ClientHandler toRemove = null;
+            for (ClientHandler clientH : _clientHandlers) {
+                if (clientH.getClientID() == clientID) {
+                    toRemove = clientH;
+                    break;
+                }
+            }
+            _clientHandlers.remove(toRemove);
         }
     }
 
