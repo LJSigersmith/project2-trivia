@@ -216,7 +216,9 @@ public class ClientHandler implements Runnable {
                 // Remove client from list and close streams when client disconnects
                 synchronized (_clientWriters) {
                     _clientWriters.remove(_outToClient);
+                    Server.removeClient(this);
                     _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
+                    _server.GUI_updatePlayerScoresList(Server._clientHandlers);
                 }
                 _socket.close();
                 //_in.close();
