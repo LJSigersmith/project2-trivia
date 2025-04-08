@@ -14,6 +14,7 @@ public abstract class ServerWindow implements ActionListener {
 
     protected JFrame frame;
     protected JLabel currentQuestionLabel;
+    protected JLabel timerLabel;
     protected JList<String> pollingQueueList;
     protected JList<String> connectedPlayersList;
     protected JLabel clientAnsweredLabel;
@@ -44,6 +45,11 @@ public abstract class ServerWindow implements ActionListener {
         correctOptionLabel = new JLabel("Correct Option: ");
         correctOptionLabel.setForeground(new Color(0, 128, 0)); // Set text color to darker green
         questionPanel.add(correctOptionLabel, BorderLayout.SOUTH);
+
+        // Add the Timer Label
+        timerLabel = new JLabel("Time Remaining: --");
+        timerLabel.setHorizontalAlignment(SwingConstants.CENTER);  // Center the timer horizontally
+        questionPanel.add(timerLabel, BorderLayout.NORTH);  // Add the timer label above the current question label
 
         questionPanel.setBorder(BorderFactory.createTitledBorder("Current Question"));
         questionPanel.setPreferredSize(new Dimension(800, 100));
@@ -178,13 +184,9 @@ public abstract class ServerWindow implements ActionListener {
     protected void GUI_updateClientAnswerLabel(String ans) {
         clientAnswerLabel.setText("Player Answer: " + ans);
     }
-
-    // New method to update the game status label
     protected void GUI_updateGameStatusLabel(String status) {
         gameStatusLabel.setText("Game Stage: " + status);
     }
-
-    // New method to update the player scores list
     protected void GUI_updatePlayerScoresList(ArrayList<ClientHandler> clients) {
         DefaultListModel<String> model = (DefaultListModel<String>) playerScoresList.getModel();
         model.clear();
@@ -192,6 +194,9 @@ public abstract class ServerWindow implements ActionListener {
             model.addElement(client.toString() + " - Score: " + client.getClientScore());
         }
         playerScoresList.setModel(model);
+    }
+    protected void GUI_updateTimer(int timeLeft) {
+        timerLabel.setText("Time Remaining: " + timeLeft);
     }
 
     // Custom OutputStream that writes to JTextArea

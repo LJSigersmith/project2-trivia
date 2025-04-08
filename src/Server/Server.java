@@ -289,6 +289,8 @@ public class Server extends ServerWindow {
             GUI_updatePollingQueueLabel(_pollingQueue);
             _questionAnswered = false;
             _pollExpiration = System.currentTimeMillis() + 15000; // 15 seconds to poll
+            Thread timerThread = new Thread(() -> { startTimer(_pollExpiration, 15); });
+            timerThread.start();
             _broadcastQuestion(_currentQuestion, _pollExpiration);
 
             System.out.println("Polling Time Beginning...");
@@ -317,6 +319,8 @@ public class Server extends ServerWindow {
                 GUI_updateClientAnsweringLabel(firstToPoll);
 
                 System.out.println("Answer Time Starting");
+                timerThread = new Thread(() -> { startTimer(_answerExpiration, 10); });
+                timerThread.start();
                 while (!_questionAnswered && System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
 
                 GUI_updateClientAnswerLabel(_playerAnswer);
@@ -437,6 +441,18 @@ public class Server extends ServerWindow {
         gameOverMesage.setData(gameResults);
 
         return gameOverMesage;
+    }
+
+    // Timer
+    private void startTimer(long timeEnd, int duration) {
+        int timeLeft = duration;
+        GUI_updateTimer(timeLeft);
+
+        while (System.currentTimeMillis() < timeEnd) {
+            try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
+            timeLeft--;
+            GUI_updateTimer(timeLeft);
+        }
     }
 
     @Override
