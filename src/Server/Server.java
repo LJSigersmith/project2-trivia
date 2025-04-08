@@ -1,5 +1,6 @@
 package Server;
 
+import java.awt.event.ActionEvent;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -16,8 +17,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-public class Server {
-    
+public class Server extends ServerWindow {
+
     // Network
     private int _serverTCPPort = 5001;
     private int _serverUDPPort = 5002;
@@ -109,7 +110,7 @@ public class Server {
     }
 
     // Handling Client Messages
-    void _listenForClientMessages() {
+    private void _listenForClientMessages() {
 
         // New thread for each client
         while (true) {
@@ -143,9 +144,11 @@ public class Server {
 
     private void _sendMessageToClient(Message message, Player player) {
 
+        System.out.println("Sending Message to: " + player.getNodeID());
         ClientHandler client = null;
         for (ClientHandler clientHandler : _clientHandlers) {
-            if (clientHandler.getClientIP() == player.getAddress() && clientHandler.getClientPort() == player.getPort()) {
+            System.out.println("Checking Client Handler: " + clientHandler.getClientID());
+            if (clientHandler.getClientID() == player.getNodeID()) {
                 client = clientHandler;
                 break;
             }
@@ -173,7 +176,9 @@ public class Server {
     private void _handlePoll(Message message, InetAddress messagAddress, int messagePort) {
 
         Player player = new Player(messagAddress, messagePort, message.getNodeID());
+        System.out.println("Player polled: " + player);
         addToPollingQueue(player);
+        addToPollingQueueLabel(player);
     }
     private void _listenForUDPMessages() {
 
@@ -206,6 +211,7 @@ public class Server {
                 ObjectInputStream objIn = new ObjectInputStream(bIn);
                 Message message = (Message) objIn.readObject();
      
+                if (_gameStage != STAGE_ACCEPTING_POLLING) { continue; }
                 if (message.getType() == Message.MSG_POLL) { _handlePoll(message, packet.getAddress(), packet.getPort()); }
      
             } catch (ClassNotFoundException e) { System.out.println("Packet was not Message type");
@@ -217,6 +223,7 @@ public class Server {
     // Constructor / Deconstructor
     public Server() {
         
+        super();
         // Load questions from file
         _loadQuestions();
 
@@ -277,6 +284,7 @@ public class Server {
             _pollExpiration = System.currentTimeMillis() + 15000; // 15 seconds to poll
             _broadcastQuestion(_currentQuestion, _pollExpiration);
 
+            System.out.println("Polling Time Beginning...");
             while (System.currentTimeMillis() < _pollExpiration) {} // wait for polling time to expire
             _gameStage = STAGE_ACCEPTING_ANSWER;
 
@@ -284,26 +292,31 @@ public class Server {
             while (!moveToNextQuestion) {
 
                 // if nobody polled, move on
-                if (_pollingQueue.size() == 0) { moveToNextQuestion = true; continue; }
+                if (_pollingQueue.size() == 0) { System.out.println("Nobody polled, next question"); moveToNextQuestion = true; continue; }
 
                 Player firstToPoll = _pollingQueue.get(0);
+                System.out.println("First player to poll: " + firstToPoll);
                 _playerAnswer = "";
                 _answerExpiration = System.currentTimeMillis() + 10000; // 10 sec to answer
                 Message goodToAnswerMessage = getGoodToAnsMessage(_answerExpiration);
                 _sendMessageToClient(goodToAnswerMessage, firstToPoll);
                 
-                while (!_questionAnswered || System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
+                System.out.println("Answer Time Starting");
+                while (!_questionAnswered && System.currentTimeMillis() < _answerExpiration) {} // wait for answer time to expire or answer to be recieved
 
                 // Check answer
                 int playerScoreUpdate = 0;
                 if (!_questionAnswered) { // timer expired, question wasnt answered, pass to next in poll queue
+                    System.out.println("Player did not answer question");
                     playerScoreUpdate = -20;
                 }
                 if (_questionAnswered && _playerAnswer == _currentQuestion.getCorrectOption()) { // player answered right, go to next question
+                    System.out.println("Player answered correctly");
                     playerScoreUpdate = 10;
                     moveToNextQuestion = true;
                 }
                 if (_questionAnswered && _playerAnswer != _currentQuestion.getCorrectOption()) { // player answered wrong, go to next in polling queue
+                    System.out.println("Player answered incorrectly");
                     playerScoreUpdate = -10;
                 }
                 // Send SCORE back to client answering
@@ -371,6 +384,12 @@ public class Server {
         scoreMessage.setTimestamp(System.currentTimeMillis()); // time when answering is allowed until (10 secs)
         scoreMessage.setData(null);
         return scoreMessage;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'actionPerformed'");
     }
 
 }

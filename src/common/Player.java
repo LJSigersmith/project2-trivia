@@ -25,6 +25,11 @@ public class Player {
         _lastAnswerTime = 0;
     }
 
+    @Override
+    public String toString() {
+        return _address.getHostName() + ":" + _port + "::ID_" + _nodeID;
+    }
+
     public InetAddress getAddress() {
         return _address;
     }

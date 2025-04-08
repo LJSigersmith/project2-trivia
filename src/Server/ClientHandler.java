@@ -23,6 +23,8 @@ public class ClientHandler implements Runnable {
     public InetAddress getClientIP() { return _clientIP; }
     int _clientPort;
     public int getClientPort() { return _clientPort; }
+    int _clientID = -1;
+    public int getClientID() { return _clientID; }
 
     private final Server _server;
 
@@ -48,6 +50,16 @@ public class ClientHandler implements Runnable {
             //_server.addPlayer((newPlayer));
             _server.incrementPlayers();
             System.out.println("Player joined: " + newPlayer.getNodeID() + " from " + newPlayer.getAddress() + ":" + newPlayer.getPort());
+
+            // Update Server GUI
+            try {
+                synchronized (_server) {
+                    _server.addToConnectedPlayersList(newPlayer);
+                }
+            } catch (Exception e) {
+                System.out.println("Error adding player to connected players list: " + e.getMessage());
+                e.printStackTrace();
+            }
         
             // Acknowledge request
             Message acknowledgementMessage = _server.getAckJoinMessage();
@@ -70,6 +82,15 @@ public class ClientHandler implements Runnable {
             _server.setPlayerAnswer(message.getData().toString());
             _server.setQuestionAnswered();
 
+        }
+
+    }
+    private void _handleAnswer(Message message, InetAddress messageAddress, int messagePort) {
+
+        if (_server.getGameStage() == Server.STAGE_ACCEPTING_ANSWER) {
+            System.out.println("Player answered: " + message.getData().toString());
+            _server.setPlayerAnswer(message.getData().toString());
+            _server.setQuestionAnswered();
         }
 
     }
@@ -143,11 +164,16 @@ public class ClientHandler implements Runnable {
                 System.out.println(message);
                 System.out.println("Message Type: " + message.getType());
 
+                if (_clientID == -1) { // client ID not set yet
+                    _clientID = message.getNodeID();    
+                }
+
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_READY_TO_START) { _handleReadyToStart(message, _clientIP, _clientPort);} 
                 // POLL is handled on UDP, ClientHandler is all TCP
                 //if (message.getType() == Message.MSG_POLL) { _handlePoll(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_GOOD_TO_ANSWER) { _handleGoodToAnswer(message, _clientIP, _clientPort);}
+                if (message.getType() == Message.MSG_ANSWER) { _handleAnswer(message, _clientIP, _clientPort); }
 
                 } catch (ClassNotFoundException e) {
                     System.out.println("Packet was not Message type");

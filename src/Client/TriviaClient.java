@@ -322,7 +322,7 @@ public class TriviaClient extends ClientWindow {
 	 * Get option radio button by index
 	 */
 	private JRadioButton getOption(int i) {
-		return super.options[i];
+		return options[i];
 	}
 
 	/**
