@@ -253,7 +253,7 @@ public class TriviaClient extends ClientWindow {
 		polling = false;
 		canAnswer = true;
 		getPollButton().setEnabled(false);
-		JOptionPane.showMessageDialog(getWindow(), "You were first! Go ahead and answer.");
+		JOptionPane.showMessageDialog(getWindow(), "Your turn to answer!");
 
 		// Start answer phase with time limit from message timestamp
 		int timeLeft = (int)((message.getTimestamp() - System.currentTimeMillis()) / 1000);

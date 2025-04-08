@@ -31,7 +31,16 @@ public abstract class ClientWindow implements ActionListener {
 		JPanel questionPanel = new JPanel(new BorderLayout());
 		questionLabel = new JLabel("Waiting for question...");
 		questionLabel.setFont(new Font("Arial", Font.BOLD, 14));
-		questionPanel.add(questionLabel, BorderLayout.CENTER);
+		JPanel questionContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+		questionContainer.add(questionLabel);
+		questionPanel.add(questionContainer, BorderLayout.CENTER);
+		questionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		questionLabel.setVerticalAlignment(SwingConstants.CENTER);
+		questionLabel.setPreferredSize(new Dimension(400, 100));
+		questionLabel.setOpaque(true);
+		questionLabel.setBackground(Color.WHITE);
+		questionLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		questionLabel.setText("<html><div style='text-align: center; word-wrap: break-word;'>Waiting for question...</div></html>");
 		window.add(questionPanel, BorderLayout.NORTH);
 
 		// Create options panel
