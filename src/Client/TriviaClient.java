@@ -565,7 +565,7 @@ public class TriviaClient extends ClientWindow {
 	private void setQuestion(String text) {
 		System.out.println("Setting q text: " + text);
 		String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
-		getQuestionLabel().setText(text);
+		getQuestionLabel().setText(htmlText);
 	}
 
 	/**
@@ -585,7 +585,7 @@ public class TriviaClient extends ClientWindow {
 	private void setOption(int index, String text) {
 		if (index >= 0 && index < 4) {
 			String htmlText = "<html>" + text.replace("\n", "<br>") + "</html>";
-			getOption(index).setText(text);
+			getOption(index).setText(htmlText);
 		}
 	}
 
