@@ -210,3 +210,67 @@ The **Client** class is responsible for interacting with the user, displaying qu
 ## Conclusion
 
 This design separates concerns between the server and client and uses both TCP and UDP protocols to efficiently manage game state and client interactions. The server manages the flow of the game, while the client handles user input and displays the game state.
+
+
+## Configuration
+
+### 1. **Setting the Server IP**
+
+When the **client** starts, it prompts the user to enter the **server IP address**. The client will attempt to connect to the server at the provided address. If the user does not input a valid IP address, the client will default to a pre-configured IP (e.g., `localhost` or `127.0.0.1`). 
+
+**Steps to Set the Server IP:**
+- When prompted at the start of the game, enter the IP address of the server.
+- If left empty, the client will use the default IP (e.g., `localhost`).
+
+### 2. **Setting the Client ID**
+
+Upon startup, the **client** also prompts the user to input their **Client ID**. This ID is used to uniquely identify each client in the game. The client ID must be an integer between 1 and 10 (inclusive). If the user enters an invalid ID (either non-numeric or out of range), the client will default to `1`.
+
+**Steps to Set the Client ID:**
+- When prompted for the Client ID, enter an integer between 1 and 10.
+- If the input is invalid, the default client ID (`1`) will be used.
+
+### 3. **Working with `.properties` Files**
+
+The `.properties` files in this project are used to store trivia questions and answers. Each file represents a set of questions in a key-value format, where:
+- `questionX` contains the question text.
+- `optionsX` contains the multiple choice options for that question.
+- `correct_answerX` specifies the correct answer for the question.
+- `num_questions` contains the total number of questions in the file.
+
+#### Example of a `.properties` file structure:
+```properties
+question1=What is the largest country by area in the world?
+options1=Russia, Canada, China, United States
+correct_answer1=Russia
+
+question2=Which river is the longest in the world?
+options2=Amazon River, Nile River, Yangtze River, Mississippi River
+correct_answer2=Nile River
+
+num_questions=2
+```
+
+#### Steps to Create Your Own Set of Questions:
+1. Create a new `.properties` file (e.g., `myquestions.properties`) in the `questions` directory.
+2. For each question, define the `questionX`, `optionsX`, and `correct_answerX` properties, where `X` is the question number.
+3. Add the `num_questions` key at the end of the file to specify the total number of questions in the file.
+4. Ensure each question has four options, and the `correct_answerX` matches one of the options.
+5. To load this custom question set, ensure the server is configured to load the desired `.properties` file when prompted.
+
+**Example of custom question file** (`myquestions.properties`):
+```properties
+question1=What is the capital of France?
+options1=Paris, London, Berlin, Rome
+correct_answer1=Paris
+
+question2=Who wrote 'Romeo and Juliet'?
+options2=Shakespeare, Dickens, Twain, Austen
+correct_answer2=Shakespeare
+
+num_questions=2
+```
+
+#### Loading a Custom Question Set:
+- By default, the game uses a built-in `.properties` file located in the `src/questions` folder. If you want to use a custom file, ensure the `.properties` file is located in the `src/questions` folder.
+
