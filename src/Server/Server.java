@@ -72,7 +72,7 @@ public class Server extends ServerWindow {
             frame.setSize(400, 150);
 
             javax.swing.JComboBox<String> fileDropdown = new javax.swing.JComboBox<>();
-            File questionsDir = new File("questions");
+            File questionsDir = new File("src/questions");
             if (questionsDir.exists() && questionsDir.isDirectory()) {
                 File[] files = questionsDir.listFiles((dir, name) -> name.endsWith(".properties"));
                 if (files != null) {
@@ -85,7 +85,7 @@ public class Server extends ServerWindow {
             javax.swing.JButton loadButton = new javax.swing.JButton("Load Questions");
             loadButton.addActionListener(event -> {
             String selectedFile = (String) fileDropdown.getSelectedItem();
-            String filePath = "questions/" + selectedFile;
+            String filePath = "src/questions/" + selectedFile;
 
             Properties properties = new Properties();
 
