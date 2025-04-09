@@ -436,10 +436,10 @@ public class Server extends ServerWindow {
 
         System.out.println("Game completed");
 
-        displayFinalScores();
+        gameOver();
     }
 
-    private void displayFinalScores() {
+    private void gameOver() {
         // Display final scores in a popup window
         javax.swing.SwingUtilities.invokeLater(() -> {
             javax.swing.JFrame frame = new javax.swing.JFrame("Game Over - Final Scores");
@@ -463,6 +463,7 @@ public class Server extends ServerWindow {
         });
 
         super.frame.setVisible(false);
+        GUI_hideKillSwitch();
     }
     
     // Messages
@@ -529,6 +530,7 @@ public class Server extends ServerWindow {
         }
     }
 
+    // Kill Switch
     public void killSwitchClicked() {
         javax.swing.SwingUtilities.invokeLater(() -> {
             javax.swing.JFrame frame = new javax.swing.JFrame("Select Client to Kill");

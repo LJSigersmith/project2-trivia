@@ -25,6 +25,7 @@ public abstract class ServerWindow implements ActionListener {
     protected JList<String> playerScoresList;
     private JPanel questionPanel;
     protected JButton killSwitchButton;
+    protected JFrame killSwitchFrame;
 
     public ServerWindow() {
 
@@ -142,16 +143,16 @@ public abstract class ServerWindow implements ActionListener {
         frame.setVisible(true);
 
         // Create a new frame with just a button
-        JFrame buttonFrame = new JFrame("Kill Switch");
-        buttonFrame.setSize(200, 100);
-        buttonFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        killSwitchFrame = new JFrame("Kill Switch");
+        killSwitchFrame.setSize(200, 100);
+        killSwitchFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         killSwitchButton = new JButton("Kill Switch");
 
-        buttonFrame.add(killSwitchButton, BorderLayout.CENTER);
+        killSwitchFrame.add(killSwitchButton, BorderLayout.CENTER);
         // Position the button frame next to the main frame
-        buttonFrame.setLocation(frame.getX() + frame.getWidth(), frame.getY());
-        buttonFrame.setVisible(true);
+        killSwitchFrame.setLocation(frame.getX() + frame.getWidth(), frame.getY());
+        killSwitchFrame.setVisible(true);
     }
 
     protected void GUI_updateQuestionLabel(Question question) {
@@ -222,6 +223,7 @@ public abstract class ServerWindow implements ActionListener {
     protected void GUI_updateQuestionPanelTitle(int qIndex) {
         questionPanel.setBorder(BorderFactory.createTitledBorder("Question " + (qIndex + 1)));
     }
+    protected void GUI_hideKillSwitch() { killSwitchFrame.setVisible(false); }
 
     // Custom OutputStream that writes to JTextArea
     static class JTextAreaOutputStream extends OutputStream {
