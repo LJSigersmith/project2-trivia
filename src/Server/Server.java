@@ -1,3 +1,4 @@
+// IF YOU WANT TO PLAY A QUICK GAME JUMP TO LINE 114 AND CHANGE NUMQUESTIONS IN GAME
 package Server;
 
 import java.awt.event.ActionEvent;
@@ -110,8 +111,7 @@ public class Server extends ServerWindow {
                 _currentQuestion = _questions.get(0);
                 _currentQuestionIndex = 0;
                 GUI_updateQuestionPanelTitle(_currentQuestionIndex);
-                //_numQuestions = _questions.size();
-                _numQuestions = 2;
+                //_numQuestions = 2; // For debugging a quick game
 
                 frame.dispose();
             } catch (IOException e) {
