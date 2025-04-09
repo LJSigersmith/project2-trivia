@@ -19,25 +19,10 @@ public class Player {
     }
 
     public InetAddress getAddress() { return _address; }
-
-    public void setAddress(InetAddress address) {
-        _address = address;
-    }
-
-    public int getPort() {
-        return _port;
-    }
-
-    public void setPort(int port) {
-        _port = port;
-    }
-
-    public int getNodeID() {
-        return _nodeID;
-    }
-
-    public void setNodeID(int nodeID) {
-        _nodeID = nodeID;
-    }
+    public void setAddress(InetAddress address) { _address = address; }
+    public int getPort() { return _port; }
+    public void setPort(int port) { _port = port; }
+    public int getNodeID() { return _nodeID; }
+    public void setNodeID(int nodeID) { _nodeID = nodeID; }
 
 }

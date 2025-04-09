@@ -11,25 +11,13 @@ public class Question implements Serializable {
     private String correctOption;
     private int questionNumber;
 
-    public static Question fromBytes(byte[] data) {
-        return null;
-    }
+    public static Question fromBytes(byte[] data) { return null; }
 
-    public String getQuestion() {
-        return question;
-    }
-    public String[] getOptions() {
-        return options;
-    }
-    public String getOption(int i) {
-        return options[i];
-    }
-    public String getCorrectOption() {
-        return correctOption;
-    }
-    public int getQuestionNumber() {
-        return questionNumber;
-    }
+    public String getQuestion() { return question; }
+    public String[] getOptions() { return options; }
+    public String getOption(int i) { return options[i]; }
+    public String getCorrectOption() { return correctOption; }
+    public int getQuestionNumber() { return questionNumber; }
 
     public Question(String question, String[] options, String correctOption, int questionNumber) {
         this.question = question;

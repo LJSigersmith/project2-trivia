@@ -3,8 +3,6 @@ package Server;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import common.Message;
@@ -14,9 +12,6 @@ import common.Question;
 public class ClientHandler implements Runnable {
     
     private final Socket _socket;
-    //private BufferedReader _in;
-    //private DataInputStream _dataIn;
-    //private OutputStream _outToClient;
     private ObjectOutputStream _outToClient;
     private ObjectInputStream _objIn;
 
@@ -30,28 +25,11 @@ public class ClientHandler implements Runnable {
     public int getClientScore() { return _clientScore; }
     public void updateClientScore(int c) { _clientScore += c; }
 
-    public void kill() {
-        try {
-            // Remove client from list and close streams when client disconnects
-            synchronized (_clientWriters) {
-                _clientWriters.remove(_outToClient);
-                Server.removeClient(this);
-                _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
-                _server.GUI_updatePlayerScoresList(Server._clientHandlers);
-            }
-            _socket.close();
-            //_in.close();
-            _outToClient.close();
-            System.out.println("Client disconnected: " + _socket.getRemoteSocketAddress());
-        } catch (IOException e) {
-            System.out.println("Error closing client: " + e.getMessage());
-        }
-    }
-
     private final Server _server;
 
     private static final CopyOnWriteArrayList<ObjectOutputStream> _clientWriters = new CopyOnWriteArrayList<>();
     
+    // Constructor
     public ClientHandler(Socket socket, Server server) {
         _socket = socket;
         _server = server;
@@ -64,11 +42,30 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) { System.out.println("Error in ClientHandler constructor"); e.printStackTrace(); }
     }
 
+    // Kill client
+    public void kill() {
+        try {
+            // Remove client from list and close streams when client disconnects
+            synchronized (_clientWriters) {
+                _clientWriters.remove(_outToClient);
+                Server.removeClient(this);
+                _server.GUI_updateConnectedPlayersList(Server._clientHandlers);
+                _server.GUI_updatePlayerScoresList(Server._clientHandlers);
+            }
+            _socket.close();
+            _outToClient.close();
+            System.out.println("Client disconnected: " + _socket.getRemoteSocketAddress());
+        } catch (IOException e) {
+            System.out.println("Error closing client: " + e.getMessage());
+        }
+    }
+
     @Override
     public String toString() {
         return _clientIP + ":" + _clientPort + "::ID_" + _clientID;
     }
 
+    // Handle Messages
     private void _handleJoinGameRequest(Message message, InetAddress messageAddress, int messagePort) {
         
         // Server is waiting for players
@@ -99,15 +96,6 @@ public class ClientHandler implements Runnable {
             Message acknowledgementMessage = _server.getAckJoinMessage();
             _sendMessageToClient(_outToClient, acknowledgementMessage);
         }
-    }
-    private void _handleReadyToStart(Message message, InetAddress messageAddress, int messagePort) {
-
-        if (_server.getGameStage() == Server.STAGE_STARTING_GAME) {
-            Player player = new Player(messageAddress, messagePort, message.getNodeID());
-            //_activePlayers.add(player);
-            System.out.println("Player ready to start: " + player.getNodeID() + " from " + messageAddress + ":" + messagePort);
-        }
-
     }
     private void _handleGoodToAnswer(Message message, InetAddress messaegeAddress, int messagePort) {
 
@@ -186,41 +174,31 @@ public class ClientHandler implements Runnable {
             _clientIP = _socket.getInetAddress();
             _clientPort = _socket.getPort();
 
-            //_in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
-
             // Add this client's OutputStream to list
             synchronized (_clientWriters) {
                 _clientWriters.add(_outToClient);
             }
 
+            // Main loop
             while (true) {    
 
                 try {
  
-                //ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
                 Object readObject = _objIn.readObject();
-                System.out.println("Received object of type: " + readObject.getClass().getName());
-
-                if (readObject instanceof String) { System.out.println("Recvd string: " + (String) readObject); continue; }
                 if (!(readObject instanceof Message)) { System.out.println("Packet not Message type"); continue; }
                 
                 Message message = (Message) readObject;
                 System.out.println(message);
                 System.out.println("Message Type: " + message.getType());
 
-                if (_clientID == -1) { // client ID not set yet
-                    _clientID = message.getNodeID();    
-                }
+                // client ID not set yet
+                if (_clientID == -1) { _clientID = message.getNodeID();    }
 
                 if (message.getType() == Message.MSG_JOIN_GAME_REQUEST) { _handleJoinGameRequest(message, _clientIP, _clientPort); }
-                if (message.getType() == Message.MSG_READY_TO_START) { _handleReadyToStart(message, _clientIP, _clientPort);} 
-                // POLL is handled on UDP, ClientHandler is all TCP
-                //if (message.getType() == Message.MSG_POLL) { _handlePoll(message, _clientIP, _clientPort); }
                 if (message.getType() == Message.MSG_GOOD_TO_ANSWER) { _handleGoodToAnswer(message, _clientIP, _clientPort);}
                 if (message.getType() == Message.MSG_ANSWER) { _handleAnswer(message, _clientIP, _clientPort); }
 
-                } catch (ClassNotFoundException e) {
-                    System.out.println("Packet was not Message type");
+                } catch (ClassNotFoundException e) { System.out.println("Packet was not Message type");
                 } catch (IOException e) {
                     System.out.println("Error reading message from packet");
                     e.printStackTrace();
@@ -239,7 +217,6 @@ public class ClientHandler implements Runnable {
                     _server.GUI_updatePlayerScoresList(Server._clientHandlers);
                 }
                 _socket.close();
-                //_in.close();
                 _outToClient.close();
                 System.out.println("Client disconnected: " + _socket.getRemoteSocketAddress());
             } catch (IOException e) {

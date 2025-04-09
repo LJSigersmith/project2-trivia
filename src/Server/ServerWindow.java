@@ -12,22 +12,24 @@ import common.Player;
 
 public abstract class ServerWindow implements ActionListener {
 
-    protected JFrame frame;
-    protected JLabel currentQuestionLabel;
-    protected JLabel timerLabel;
-    protected JList<String> pollingQueueList;
-    protected JList<String> connectedPlayersList;
-    protected JLabel clientAnsweredLabel;
-    protected JLabel clientAnsweringLabel;
-    protected JLabel clientAnswerLabel;
-    protected JLabel correctOptionLabel;
-    protected JLabel gameStatusLabel;
-    protected JList<String> playerScoresList;
+    private JFrame frame;
+    private JLabel currentQuestionLabel;
+    private JLabel timerLabel;
+    private JList<String> pollingQueueList;
+    private JList<String> connectedPlayersList;
+    private JLabel clientAnsweredLabel;
+    private JLabel clientAnsweringLabel;
+    private JLabel clientAnswerLabel;
+    private JLabel correctOptionLabel;
+    private JLabel gameStatusLabel;
+    private JList<String> playerScoresList;
     private JPanel questionPanel;
     protected JButton killSwitchButton;
-    protected JFrame killSwitchFrame;
+    private JFrame killSwitchFrame;
 
     public ServerWindow() {
+
+        // Most of this setup stuff is ChatGPT
 
         frame = new JFrame("Trivia Game Server");
         frame.setSize(800, 600);
@@ -224,7 +226,8 @@ public abstract class ServerWindow implements ActionListener {
         questionPanel.setBorder(BorderFactory.createTitledBorder("Question " + (qIndex + 1)));
     }
     protected void GUI_hideKillSwitch() { killSwitchFrame.setVisible(false); }
-
+    protected void GUI_hideMainFrame() { frame.setVisible(false);}
+    
     // Custom OutputStream that writes to JTextArea
     static class JTextAreaOutputStream extends OutputStream {
         private JTextArea textArea;

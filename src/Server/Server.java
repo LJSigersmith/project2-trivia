@@ -438,7 +438,6 @@ public class Server extends ServerWindow {
 
         gameOver();
     }
-
     private void gameOver() {
         // Display final scores in a popup window
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -462,7 +461,7 @@ public class Server extends ServerWindow {
             frame.setVisible(true);
         });
 
-        super.frame.setVisible(false);
+        GUI_hideMainFrame();
         GUI_hideKillSwitch();
     }
     
